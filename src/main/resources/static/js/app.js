@@ -138,7 +138,11 @@ async function loadDashboard() {
 
         const data =
             await apiRequest("/api/dashboard");
+const videos =
+    await apiRequest("/api/videos");
 
+renderPerformanceChart(videos);
+renderEngagementChart(videos);
         const cards = [
 
             ["Total Videos", data.totalVideos],
@@ -623,4 +627,175 @@ if (token) {
 
     loadDashboard();
 
+}
+// ===============================
+// DASHBOARD CHARTS
+// ===============================
+
+let performanceChart = null;
+let engagementChart = null;
+
+
+function renderPerformanceChart(videos) {
+
+    const canvas =
+        document.getElementById("performanceChart");
+
+    if (!canvas) return;
+
+    if (performanceChart) {
+        performanceChart.destroy();
+    }
+
+    if (!videos || videos.length === 0) {
+        return;
+    }
+
+    const labels =
+        videos.map(video => video.title);
+
+    const views =
+        videos.map(video => video.views);
+
+    const likes =
+        videos.map(video => video.likes);
+
+    const comments =
+        videos.map(video => video.comments);
+
+
+    performanceChart = new Chart(canvas, {
+
+        type: "bar",
+
+        data: {
+
+            labels,
+
+            datasets: [
+
+                {
+                    label: "Views",
+                    data: views
+                },
+
+                {
+                    label: "Likes",
+                    data: likes
+                },
+
+                {
+                    label: "Comments",
+                    data: comments
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                }
+
+            },
+
+            scales: {
+
+                y: {
+                    beginAtZero: true
+                }
+
+            }
+
+        }
+
+    });
+}
+
+
+function renderEngagementChart(videos) {
+
+    const canvas =
+        document.getElementById("engagementChart");
+
+    if (!canvas) return;
+
+    if (engagementChart) {
+        engagementChart.destroy();
+    }
+
+    if (!videos || videos.length === 0) {
+        return;
+    }
+
+    const totalLikes =
+        videos.reduce(
+            (sum, video) => sum + Number(video.likes || 0),
+            0
+        );
+
+    const totalComments =
+        videos.reduce(
+            (sum, video) => sum + Number(video.comments || 0),
+            0
+        );
+
+    const totalShares =
+        videos.reduce(
+            (sum, video) => sum + Number(video.shares || 0),
+            0
+        );
+
+
+    engagementChart = new Chart(canvas, {
+
+        type: "doughnut",
+
+        data: {
+
+            labels: [
+                "Likes",
+                "Comments",
+                "Shares"
+            ],
+
+            datasets: [
+
+                {
+                    data: [
+                        totalLikes,
+                        totalComments,
+                        totalShares
+                    ]
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: "bottom"
+                }
+
+            }
+
+        }
+
+    });
 }
