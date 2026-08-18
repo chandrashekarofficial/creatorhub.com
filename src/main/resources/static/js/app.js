@@ -1,4 +1,4 @@
-﻿
+
 let token = localStorage.getItem("creatorhub_token");
 
 const loginPage = document.getElementById("loginPage");
@@ -169,13 +169,10 @@ async function loadDashboard() {
 
             ["Total Videos", data.totalVideos],
 
-            ["Total Views", data.totalViews],
-
-            ["Total Likes", data.totalLikes],
-
-            ["Comments", data.totalComments],
-
-            ["Shares", data.totalShares],
+            ["Total Views", Number(data.totalViews || 0).toLocaleString()],
+["Total Likes", Number(data.totalLikes || 0).toLocaleString()],
+["Comments", Number(data.totalComments || 0).toLocaleString()],
+["Shares", Number(data.totalShares || 0).toLocaleString()],
 
             [
                 "Average CTR",
@@ -184,7 +181,7 @@ async function loadDashboard() {
 
             [
                 "Engagement",
-                `${Number(data.averageEngagement || 0).toFixed(1)}%`
+                `${Number(data.averageEngagement || 0).toFixed(2)}%`
             ],
 
             ["Content Ideas", data.totalContentIdeas],

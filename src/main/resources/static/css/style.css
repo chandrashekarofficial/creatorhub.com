@@ -372,3 +372,62 @@ body {
         padding: 30px 22px;
     }
 }
+/* ================= DASHBOARD POLISH ================= */
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    padding: 24px;
+    min-height: 135px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    right: -25px;
+    top: -25px;
+    border-radius: 50%;
+    background: #eef2ff;
+}
+
+.stat-card h6 {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+}
+
+.stat-card h3 {
+    position: relative;
+    z-index: 1;
+    font-size: 30px;
+    letter-spacing: -0.02em;
+}
+
+.chart-card {
+    min-height: 390px;
+    border-radius: 18px;
+}
+
+.chart-header h5 {
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.chart-header p {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    margin-top: 20px;
+}
