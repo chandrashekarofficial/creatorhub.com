@@ -78,12 +78,7 @@ public class ContentController {
         return ResponseEntity.noContent().build();
     }
 
-    private Long getUserId(Authentication authentication) {
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
-
-        return user.getUserId();
-    }
+   private Long getUserId(Authentication authentication) {
+    return Long.parseLong(authentication.getName());
+}
 }
