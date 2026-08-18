@@ -1,4 +1,4 @@
-
+﻿
 let token = localStorage.getItem("creatorhub_token");
 
 const loginPage = document.getElementById("loginPage");
@@ -1404,6 +1404,84 @@ async function loadCalendar() {
 }
 
 
+async function handleCalendarSubmit(event) {
+
+    event.preventDefault();
+
+    const message =
+        document.getElementById("calendarFormMessage");
+
+    const contentIdValue =
+        document.getElementById("calendarContentId").value;
+
+    const eventDate =
+        document.getElementById("calendarEventDate").value;
+
+    const eventType =
+        document.getElementById("calendarEventType").value;
+
+    if (!eventDate || !eventType) {
+        message.innerHTML = `
+            <div class="error-message">
+                Date and event type are required.
+            </div>
+        `;
+        return;
+    }
+
+    const eventBody = {
+        contentId: contentIdValue
+            ? Number(contentIdValue)
+            : null,
+        eventDate: eventDate,
+        eventType: eventType
+    };
+
+    try {
+
+        message.innerHTML = `
+            <div class="loading">
+                Creating event...
+            </div>
+        `;
+
+        await apiRequest("/api/calendar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(eventBody)
+        });
+
+        message.innerHTML = `
+            <div class="success-message">
+                Calendar event created successfully.
+            </div>
+        `;
+
+        document.getElementById("calendarForm").reset();
+
+        await loadCalendar();
+
+    } catch (error) {
+
+        message.innerHTML = `
+            <div class="error-message">
+                ${escapeHtml(error.message)}
+            </div>
+        `;
+    }
+}
+
+const calendarForm =
+    document.getElementById("calendarForm");
+
+if (calendarForm) {
+    calendarForm.addEventListener(
+        "submit",
+        handleCalendarSubmit
+    );
+}
 // ======================================================
 // SEO
 // ======================================================
