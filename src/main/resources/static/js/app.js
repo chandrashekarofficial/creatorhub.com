@@ -1,28 +1,25 @@
+// ======================================================
+// CREATORHUB - APP.JS
+// ======================================================
 
-let token = localStorage.getItem("creatorhub_token");
-
-const loginPage = document.getElementById("loginPage");
-const dashboardApp = document.getElementById("dashboardApp");
-const loginForm = document.getElementById("loginForm");
-const loginError = document.getElementById("loginError");
-const logoutBtn = document.getElementById("logoutBtn");
-
-let performanceChart = null;
-let engagementChart = null;
+console.log("CREATORHUB APP.JS LOADED");
 
 
 // ======================================================
-// API HELPER
+// API REQUEST HELPER
 // ======================================================
 
 async function apiRequest(url, options = {}) {
 
+    const token = localStorage.getItem("creatorhub_token");
+
     const headers = {
+        "Content-Type": "application/json",
         ...(options.headers || {})
     };
 
     if (token) {
-       headers["Authorization"] = "Bearer " + token;
+        headers["Authorization"] = "Bearer " + token;
     }
 
     const response = await fetch(url, {
@@ -30,109 +27,74 @@ async function apiRequest(url, options = {}) {
         headers
     });
 
-    if (response.status === 401) {
-        logout();
-        throw new Error("Session expired. Please login again.");
+    let data = null;
+
+    try {
+        data = await response.json();
+    } catch {
+        data = null;
     }
 
     if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `Request failed: ${response.status}`);
-    }
-
-    if (response.status === 204) {
-        return null;
-    }
-
-    return response.json();
-}
-
-
-// ======================================================
-// LOGIN
-// ======================================================
-
-loginForm.addEventListener("submit", async function (event) {
-
-    event.preventDefault();
-
-    loginError.textContent = "";
-
-    const email =
-        document.getElementById("loginEmail").value.trim();
-
-    const password =
-        document.getElementById("loginPassword").value;
-
-    try {
-
-        const response = await fetch("/api/auth/login", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                email,
-                password
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error("Invalid email or password.");
-        }
-
-        const data = await response.json();
-
-        token = data.token;
-
-        localStorage.setItem(
-            "creatorhub_token",
-            token
+        throw new Error(
+            data?.error ||
+            data?.message ||
+            "Request failed: " + response.status
         );
-
-        showApp();
-
-        await loadDashboard();
-
-    } catch (error) {
-
-        loginError.textContent = error.message;
     }
-});
 
-
-// ======================================================
-// LOGOUT
-// ======================================================
-
-logoutBtn.addEventListener("click", logout);
-
-function logout() {
-
-    token = null;
-
-    localStorage.removeItem("creatorhub_token");
-
-    dashboardApp.classList.add("d-none");
-
-    loginPage.classList.remove("d-none");
-
-    destroyCharts();
+    return data;
 }
 
 
 // ======================================================
-// SHOW APP
+// HTML HELPERS
 // ======================================================
 
-function showApp() {
+function escapeHtml(value) {
 
-    loginPage.classList.add("d-none");
+    if (value === null || value === undefined) {
+        return "";
+    }
 
-    dashboardApp.classList.remove("d-none");
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function escapeAttribute(value) {
+    return escapeHtml(value);
+}
+
+
+// ======================================================
+// STATUS BADGE
+// ======================================================
+
+function getStatusClass(status) {
+
+    switch (
+        String(status || "")
+            .toUpperCase()
+            .trim()
+    ) {
+
+        case "IDEA":
+            return "bg-secondary";
+
+        case "PLANNED":
+            return "bg-warning text-dark";
+
+        case "PUBLISHED":
+            return "bg-success";
+
+        default:
+            return "bg-secondary";
+    }
 }
 
 
@@ -142,369 +104,255 @@ function showApp() {
 
 async function loadDashboard() {
 
-    const container =
+    console.log("LOAD DASHBOARD STARTED");
+
+    const dashboardContainer =
         document.getElementById("dashboardCards");
 
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="loading">
-            Loading dashboard...
-        </div>
-    `;
+    if (!dashboardContainer) {
+        console.warn("dashboardCards not found");
+        return;
+    }
 
     try {
 
-        const data =
+        const dashboard =
             await apiRequest("/api/dashboard");
 
-        const videos =
-            await apiRequest("/api/videos");
+        console.log("DASHBOARD:", dashboard);
 
-        // Render charts
-        renderPerformanceChart(videos);
-        renderEngagementChart(videos);
+        dashboardContainer.innerHTML = `
 
-        const cards = [
+            <!-- OVERVIEW -->
+            <div class="row g-4 mb-4">
 
-            ["Total Videos", data.totalVideos],
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Content Ideas</h6>
+                        <h3>
+                            ${dashboard.totalContentIdeas ?? 0}
+                        </h3>
+                    </div>
+                </div>
 
-            ["Total Views", Number(data.totalViews || 0).toLocaleString()],
-["Total Likes", Number(data.totalLikes || 0).toLocaleString()],
-["Comments", Number(data.totalComments || 0).toLocaleString()],
-["Shares", Number(data.totalShares || 0).toLocaleString()],
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Videos</h6>
+                        <h3>
+                            ${dashboard.totalVideos ?? 0}
+                        </h3>
+                    </div>
+                </div>
 
-            [
-                "Average CTR",
-                `${Number(data.averageCtr || 0).toFixed(2)}%`
-            ],
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Reports</h6>
+                        <h3>
+                            ${dashboard.totalReports ?? 0}
+                        </h3>
+                    </div>
+                </div>
 
-            [
-                "Engagement",
-                `${Number(data.averageEngagement || 0).toFixed(2)}%`
-            ],
+                <div class="col-md-3">
+                    <div class="stat-card">
+    <div class="stat-icon">
+        <i class="bi bi-lightbulb-fill"></i>
+    </div>
 
-            ["Content Ideas", data.totalContentIdeas],
+    <h6>Content Ideas</h6>
 
-            ["Calendar Events", data.totalCalendarEvents],
-
-            ["SEO Records", data.totalSeoRecords],
-
-            ["Reports", data.totalReports]
-        ];
-
-        container.innerHTML = cards.map(card => `
-
-            <div class="col-sm-6 col-lg-3">
-
-                <div class="stat-card">
-
-                    <h6>${escapeHtml(card[0])}</h6>
-
-                    <h3>${card[1] ?? 0}</h3>
-
+    <h3>
+        ${dashboard.totalContentIdeas ?? 0}
+    </h3>
+</div>
                 </div>
 
             </div>
 
-        `).join("");
+
+            <!-- PERFORMANCE -->
+            <div class="row g-4 mb-4">
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6>Total Views</h6>
+                        <h3>
+                            ${dashboard.totalViews ?? 0}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6>Total Likes</h6>
+                        <h3>
+                            ${dashboard.totalLikes ?? 0}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h6>Total Comments</h6>
+                        <h3>
+                            ${dashboard.totalComments ?? 0}
+                        </h3>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- ENGAGEMENT -->
+            <div class="row g-4 mb-4">
+
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Total Shares</h6>
+                        <h3>
+                            ${dashboard.totalShares ?? 0}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Average CTR</h6>
+                        <h3>
+                            ${dashboard.averageCtr ?? 0}%
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Average Engagement</h6>
+                        <h3>
+                            ${dashboard.averageEngagement ?? 0}%
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Calendar Events</h6>
+                        <h3>
+                            ${dashboard.totalCalendarEvents ?? 0}
+                        </h3>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- WELCOME -->
+            <div class="data-card">
+
+                <h5 class="mb-3">
+                    Welcome to CreatorHub
+                </h5>
+
+                <p class="text-muted mb-0">
+                    Manage your content,
+                    videos, analytics and SEO
+                    from one place.
+                </p>
+
+            </div>
+
+        `;
 
     } catch (error) {
 
-        container.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
+        console.error(
+            "DASHBOARD ERROR:",
+            error
+        );
+
+        dashboardContainer.innerHTML = `
+            <div class="alert alert-danger">
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load dashboard."
+                )}
             </div>
         `;
     }
 }
-
-
 // ======================================================
-// PERFORMANCE CHART
+// CONTENT IDEAS
 // ======================================================
 
-function renderPerformanceChart(videos) {
+async function loadContent() {
 
-    const canvas =
-        document.getElementById("performanceChart");
-
-    if (!canvas) {
-        return;
-    }
-
-    if (performanceChart) {
-        performanceChart.destroy();
-        performanceChart = null;
-    }
-
-    if (!videos || videos.length === 0) {
-        return;
-    }
-
-    const labels =
-        videos.map(video => video.title);
-
-    const views =
-        videos.map(video => Number(video.views || 0));
-
-    const likes =
-        videos.map(video => Number(video.likes || 0));
-
-    const comments =
-        videos.map(video => Number(video.comments || 0));
-
-    performanceChart = new Chart(canvas, {
-
-        type: "bar",
-
-        data: {
-
-            labels: labels,
-
-            datasets: [
-
-                {
-                    label: "Views",
-                    data: views
-                },
-
-                {
-                    label: "Likes",
-                    data: likes
-                },
-
-                {
-                    label: "Comments",
-                    data: comments
-                }
-
-            ]
-        },
-
-        options: {
-
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            interaction: {
-                mode: "index",
-                intersect: false
-            },
-
-            plugins: {
-
-                legend: {
-                    position: "bottom"
-                }
-
-            },
-
-            scales: {
-
-                y: {
-                    beginAtZero: true
-                }
-
-            }
-
-        }
-    });
-}
-
-
-// ======================================================
-// ENGAGEMENT CHART
-// ======================================================
-
-function renderEngagementChart(videos) {
-
-    const canvas =
-        document.getElementById("engagementChart");
-
-    if (!canvas) {
-        return;
-    }
-
-    if (engagementChart) {
-        engagementChart.destroy();
-        engagementChart = null;
-    }
-
-    if (!videos || videos.length === 0) {
-        return;
-    }
-
-    const totalLikes =
-        videos.reduce(
-            (sum, video) =>
-                sum + Number(video.likes || 0),
-            0
-        );
-
-    const totalComments =
-        videos.reduce(
-            (sum, video) =>
-                sum + Number(video.comments || 0),
-            0
-        );
-
-    const totalShares =
-        videos.reduce(
-            (sum, video) =>
-                sum + Number(video.shares || 0),
-            0
-        );
-
-    engagementChart = new Chart(canvas, {
-
-        type: "doughnut",
-
-        data: {
-
-            labels: [
-                "Likes",
-                "Comments",
-                "Shares"
-            ],
-
-            datasets: [
-
-                {
-                    data: [
-                        totalLikes,
-                        totalComments,
-                        totalShares
-                    ]
-                }
-
-            ]
-        },
-
-        options: {
-
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            plugins: {
-
-                legend: {
-                    position: "bottom"
-                }
-
-            }
-        }
-    });
-}
-
-
-// ======================================================
-// DESTROY CHARTS
-// ======================================================
-
-function destroyCharts() {
-
-    if (performanceChart) {
-        performanceChart.destroy();
-        performanceChart = null;
-    }
-
-    if (engagementChart) {
-        engagementChart.destroy();
-        engagementChart = null;
-    }
-}
-
-
-// ======================================================
-// VIDEOS
-// ======================================================
-
-async function loadVideos() {
+    console.log("LOAD CONTENT STARTED");
 
     const container =
-        document.getElementById("videosContainer");
+        document.getElementById("contentContainer");
 
-    if (!container) return;
+    if (!container) {
+        console.error("contentContainer not found");
+        return;
+    }
 
     container.innerHTML = `
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
-            <div>
-                <h4 class="mb-1">
-                    Your Videos
-                </h4>
-
-                <p class="text-muted mb-0">
-                    Manage your video performance
-                </p>
-            </div>
-
-            <button
-                class="btn btn-primary"
-                onclick="showVideoForm()">
-
-                + Add Video
-
-            </button>
-
-        </div>
-
-        <div id="videoFormContainer"></div>
-
-        <div id="videoTableContainer">
-            <div class="loading">
-                Loading videos...
-            </div>
-        </div>
+        <div id="contentFormContainer"></div>
+        <div id="contentTableContainer" class="mt-4"></div>
     `;
 
-    await refreshVideoTable();
+    await refreshContentTable();
 }
-
-
 // ======================================================
-// VIDEO TABLE
+// CONTENT TABLE
 // ======================================================
 
-async function refreshVideoTable() {
+async function refreshContentTable() {
 
     const container =
-        document.getElementById("videoTableContainer");
+        document.getElementById(
+            "contentTableContainer"
+        );
 
-    if (!container) return;
+    if (!container) {
+        return;
+    }
 
     container.innerHTML = `
         <div class="loading">
-            Loading videos...
+            Loading content ideas...
         </div>
     `;
 
     try {
 
-        const videos =
-            await apiRequest("/api/videos");
+        const content =
+            await apiRequest("/api/content");
 
-        if (!videos || videos.length === 0) {
+        console.log("CONTENT:", content);
+
+        if (
+            !Array.isArray(content) ||
+            content.length === 0
+        ) {
 
             container.innerHTML = `
 
                 <div class="data-card text-center py-5">
 
-                    <h5>No videos yet</h5>
+                    <h5>
+                        No content ideas yet
+                    </h5>
 
                     <p class="text-muted">
-                        Add your first video to start tracking performance.
+                        Create your first content idea.
                     </p>
 
                     <button
+                        type="button"
                         class="btn btn-primary"
-                        onclick="showVideoForm()">
+                        onclick="showContentForm()">
 
-                        + Add Video
+                        + Add Idea
 
                     </button>
 
@@ -527,6 +375,931 @@ async function refreshVideoTable() {
                             <tr>
                                 <th>ID</th>
                                 <th>Title</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Planned Date</th>
+                                <th>Actions</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            ${content.map(idea => `
+
+                                <tr>
+
+                                    <td>
+                                        ${idea.ideaId ?? "-"}
+                                    </td>
+
+                                    <td>
+
+                                        <strong>
+                                            ${escapeHtml(
+                                                idea.title || ""
+                                            )}
+                                        </strong>
+
+                                        ${
+                                            idea.hook
+                                            ? `
+                                                <div class="small text-muted mt-1">
+                                                    ${escapeHtml(
+                                                        idea.hook
+                                                    )}
+                                                </div>
+                                            `
+                                            : ""
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        ${escapeHtml(
+                                            idea.category || ""
+                                        )}
+                                    </td>
+
+                                    <td>
+
+                                        <span class="badge ${
+                                            getStatusClass(
+                                                idea.status
+                                            )
+                                        }">
+
+                                            ${escapeHtml(
+                                                idea.status || "IDEA"
+                                            )}
+
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+                                        ${
+                                            idea.plannedDate
+                                            ? escapeHtml(
+                                                idea.plannedDate
+                                            )
+                                            : "-"
+                                        }
+                                    </td>
+
+                                    <td>
+
+                                        <div class="btn-group">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="editContent(${idea.ideaId})">
+
+                                                Edit
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteContent(${idea.ideaId})">
+
+                                                Delete
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            `).join("")}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        `;
+
+    } catch (error) {
+
+        console.error(
+            "CONTENT TABLE ERROR:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <div class="alert alert-danger">
+
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load content ideas."
+                )}
+
+            </div>
+        `;
+    }
+}
+
+
+// ======================================================
+// CONTENT FORM
+// ======================================================
+
+function showContentForm(idea = null) {
+
+    const container =
+        document.getElementById(
+            "contentFormContainer"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const editing =
+        idea !== null;
+
+    container.innerHTML = `
+
+        <div class="data-card mb-4">
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
+
+                <h5 class="mb-0">
+
+                    ${
+                        editing
+                        ? "Edit Content Idea"
+                        : "Add Content Idea"
+                    }
+
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="closeContentForm()">
+
+                    Cancel
+
+                </button>
+
+            </div>
+
+            <form id="contentForm">
+
+                <div class="mb-3">
+
+                    <label
+                        for="contentTitle"
+                        class="form-label">
+
+                        Title
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="contentTitle"
+                        class="form-control"
+                        maxlength="255"
+                        value="${
+                            editing
+                            ? escapeAttribute(
+                                idea.title || ""
+                            )
+                            : ""
+                        }"
+                        required>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label
+                        for="contentHook"
+                        class="form-label">
+
+                        Hook
+
+                    </label>
+
+                    <textarea
+                        id="contentHook"
+                        class="form-control"
+                        rows="3"
+                        maxlength="1000">${
+                            editing
+                            ? escapeHtml(
+                                idea.hook || ""
+                            )
+                            : ""
+                        }</textarea>
+
+                </div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="contentCategory"
+                            class="form-label">
+
+                            Category
+
+                        </label>
+
+                        <input
+                            type="text"
+                            id="contentCategory"
+                            class="form-control"
+                            value="${
+                                editing
+                                ? escapeAttribute(
+                                    idea.category || ""
+                                )
+                                : ""
+                            }"
+                            required>
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="contentStatus"
+                            class="form-label">
+
+                            Status
+
+                        </label>
+
+                        <select
+                            id="contentStatus"
+                            class="form-select"
+                            required>
+
+                            <option value="IDEA">
+                                IDEA
+                            </option>
+
+                            <option value="PLANNED">
+                                PLANNED
+                            </option>
+
+                            <option value="PUBLISHED">
+                                PUBLISHED
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="mt-3">
+
+                    <label
+                        for="contentPlannedDate"
+                        class="form-label">
+
+                        Planned Date
+
+                    </label>
+
+                    <input
+                        type="date"
+                        id="contentPlannedDate"
+                        class="form-control"
+                        value="${
+                            editing &&
+                            idea.plannedDate
+                            ? escapeAttribute(
+                                idea.plannedDate
+                            )
+                            : ""
+                        }">
+
+                </div>
+
+                <div
+                    id="contentFormError"
+                    class="text-danger mt-3">
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary mt-3">
+
+                    ${
+                        editing
+                        ? "Update Idea"
+                        : "Save Idea"
+                    }
+
+                </button>
+
+            </form>
+
+        </div>
+    `;
+
+    if (
+        editing &&
+        idea.status
+    ) {
+
+        document.getElementById(
+            "contentStatus"
+        ).value = idea.status;
+    }
+
+    const form =
+        document.getElementById(
+            "contentForm"
+        );
+
+    if (form) {
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                await saveContent(
+                    editing
+                    ? idea.ideaId
+                    : null
+                );
+            }
+        );
+    }
+}
+
+
+// ======================================================
+// SAVE CONTENT
+// ======================================================
+
+async function saveContent(ideaId = null) {
+
+    const errorContainer =
+        document.getElementById(
+            "contentFormError"
+        );
+
+    const title =
+        document.getElementById(
+            "contentTitle"
+        ).value.trim();
+
+    const hook =
+        document.getElementById(
+            "contentHook"
+        ).value.trim();
+
+    const category =
+        document.getElementById(
+            "contentCategory"
+        ).value.trim();
+
+    const status =
+        document.getElementById(
+            "contentStatus"
+        ).value;
+
+    const plannedDate =
+        document.getElementById(
+            "contentPlannedDate"
+        ).value;
+
+    if (!title) {
+
+        errorContainer.textContent =
+            "Title is required.";
+
+        return;
+    }
+
+    if (!category) {
+
+        errorContainer.textContent =
+            "Category is required.";
+
+        return;
+    }
+
+    try {
+
+        errorContainer.textContent =
+            "Saving...";
+
+        await apiRequest(
+            ideaId
+                ? `/api/content/${ideaId}`
+                : "/api/content",
+            {
+                method: ideaId
+                    ? "PUT"
+                    : "POST",
+
+                body: JSON.stringify({
+                    title,
+                    hook: hook || null,
+                    category,
+                    status,
+                    plannedDate:
+                        plannedDate || null
+                })
+            }
+        );
+
+        console.log(
+            "CONTENT SAVED SUCCESSFULLY"
+        );
+
+        closeContentForm();
+
+        await refreshContentTable();
+
+    } catch (error) {
+
+        console.error(
+            "SAVE CONTENT ERROR:",
+            error
+        );
+
+        errorContainer.textContent =
+            error.message;
+    }
+}
+
+
+// ======================================================
+// EDIT CONTENT
+// ======================================================
+
+async function editContent(ideaId) {
+
+    try {
+
+        const idea =
+            await apiRequest(
+                `/api/content/${ideaId}`
+            );
+
+        showContentForm(idea);
+
+    } catch (error) {
+
+        console.error(
+            "EDIT CONTENT ERROR:",
+            error
+        );
+
+        alert(error.message);
+    }
+}
+
+
+// ======================================================
+// DELETE CONTENT
+// ======================================================
+
+async function deleteContent(ideaId) {
+
+    if (
+        !confirm(
+            "Are you sure you want to delete this content idea?"
+        )
+    ) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(
+            `/api/content/${ideaId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        await refreshContentTable();
+
+    } catch (error) {
+
+        console.error(
+            "DELETE CONTENT ERROR:",
+            error
+        );
+
+        alert(error.message);
+    }
+}
+
+
+// ======================================================
+// CLOSE CONTENT FORM
+// ======================================================
+
+function closeContentForm() {
+
+    const container =
+        document.getElementById(
+            "contentFormContainer"
+        );
+
+    if (container) {
+        container.innerHTML = "";
+    }
+}
+
+
+// ======================================================
+// LOGIN
+// ======================================================
+
+function setupLogin() {
+
+    const loginForm =
+        document.getElementById(
+            "loginForm"
+        );
+
+    if (!loginForm) {
+        console.warn(
+            "loginForm not found"
+        );
+        return;
+    }
+
+    loginForm.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            const email =
+                document.getElementById(
+                    "loginEmail"
+                ).value.trim();
+
+            const password =
+                document.getElementById(
+                    "loginPassword"
+                ).value;
+
+            const loginError =
+                document.getElementById(
+                    "loginError"
+                );
+
+            if (loginError) {
+                loginError.textContent =
+                    "Logging in...";
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/auth/login",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                email,
+                                password
+                            })
+                        }
+                    );
+
+                let data = null;
+
+                try {
+                    data = await response.json();
+                } catch {
+                    data = null;
+                }
+
+                console.log(
+                    "LOGIN RESPONSE:",
+                    data
+                );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data?.error ||
+                        data?.message ||
+                        "Login failed"
+                    );
+                }
+
+                if (!data?.token) {
+
+                    throw new Error(
+                        "Server did not return a token."
+                    );
+                }
+
+                localStorage.setItem(
+                    "creatorhub_token",
+                    data.token
+                );
+
+                localStorage.setItem(
+                    "creatorhub_user",
+                    JSON.stringify({
+                        userId:
+                            data.userId,
+                        name:
+                            data.name,
+                        email:
+                            data.email
+                    })
+                );
+
+                console.log(
+                    "LOGIN SUCCESS"
+                );
+
+                window.location.reload();
+
+            } catch (error) {
+
+                console.error(
+                    "LOGIN ERROR:",
+                    error
+                );
+
+                if (loginError) {
+                    loginError.textContent =
+                        error.message;
+                }
+            }
+        }
+    );
+
+    console.log(
+        "LOGIN HANDLER READY"
+    );
+}
+
+
+// ======================================================
+// LOGOUT
+// ======================================================
+
+function logout() {
+
+    localStorage.removeItem(
+        "creatorhub_token"
+    );
+
+    localStorage.removeItem(
+        "creatorhub_user"
+    );
+
+    window.location.reload();
+}
+
+
+// ======================================================
+// NAVIGATION
+// ======================================================
+
+function showPage(page) {
+
+    console.log("SHOW PAGE:", page);
+
+    const pages = document.querySelectorAll(".page");
+
+    console.log("TOTAL PAGES:", pages.length);
+
+    // Hide every page
+    pages.forEach(section => {
+        section.classList.add("d-none");
+    });
+
+    // Find requested page
+    const target = document.getElementById(`page-${page}`);
+
+    if (!target) {
+        console.error(`PAGE NOT FOUND: page-${page}`);
+        return;
+    }
+
+    // Show ONLY the requested page
+    target.classList.remove("d-none");
+
+    console.log(
+        "VISIBLE PAGE:",
+        target.id,
+        target.className
+    );
+
+    switch (page) {
+
+        case "dashboard":
+            loadDashboard();
+            break;
+
+        case "videos":
+            loadVideos();
+            break;
+
+        case "content":
+            loadContent();
+            break;
+
+        case "calendar":
+            loadCalendar();
+            break;
+
+        case "seo":
+            loadSeo();
+            break;
+
+        case "reports":
+            loadReports();
+            break;
+
+        default:
+            console.warn("UNKNOWN PAGE:", page);
+    }
+}
+// ======================================================
+// NAVIGATION EVENT LISTENERS
+// ======================================================
+
+function setupNavigation() {
+
+    console.log(
+        "SETTING UP NAVIGATION"
+    );
+
+    const buttons =
+        document.querySelectorAll(".nav-btn");
+
+    console.log(
+        "NAV BUTTON COUNT:",
+        buttons.length
+    );
+
+    buttons.forEach(button => {
+
+        button.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                const page =
+                    button.dataset.page;
+
+                console.log(
+                    "NAV CLICK:",
+                    page
+                );
+
+                if (page) {
+                    showPage(page);
+                }
+            }
+        );
+    });
+}
+
+
+// ======================================================
+// PLACEHOLDER PAGE LOADERS
+// ======================================================
+
+async function loadVideos() {
+
+    console.log("LOAD VIDEOS STARTED");
+
+    const container =
+        document.getElementById("videosContainer");
+
+    if (!container) {
+        console.warn("videosContainer not found");
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="data-card text-center py-4">
+            Loading videos...
+        </div>
+    `;
+
+    try {
+
+        const videos =
+            await apiRequest("/api/videos");
+
+        console.log("VIDEOS:", videos);
+
+        if (!Array.isArray(videos) || videos.length === 0) {
+
+    container.innerHTML = `
+        <div class="d-flex justify-content-between
+                    align-items-center mb-4">
+
+            <div>
+                <h4 class="mb-1">
+                    Videos
+                </h4>
+
+                <p class="text-muted mb-0">
+                    Track and manage your video performance.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="btn btn-primary"
+                onclick="showVideoForm()">
+
+                + Add Video
+
+            </button>
+
+        </div>
+
+        <div id="videoFormContainer"></div>
+
+        <div class="data-card text-center py-5">
+
+            <h4 class="mb-2">
+                No videos yet
+            </h4>
+
+            <p class="text-muted mb-0">
+                Add your first video to start tracking performance.
+            </p>
+
+        </div>
+    `;
+
+    return;
+}
+
+        container.innerHTML = `
+
+            <div class="d-flex justify-content-between
+                        align-items-center mb-4">
+
+                <div>
+                    <h4 class="mb-1">
+                        Videos
+                    </h4>
+
+                    <p class="text-muted mb-0">
+                        Track and manage your video performance.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="showVideoForm()">
+
+                    + Add Video
+
+                </button>
+
+            </div>
+
+            <div id="videoFormContainer"></div>
+
+            <div class="data-card">
+
+                <div class="table-responsive">
+
+                    <table class="table align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
                                 <th>Views</th>
                                 <th>Likes</th>
                                 <th>Comments</th>
@@ -535,7 +1308,6 @@ async function refreshVideoTable() {
                                 <th>CTR</th>
                                 <th>Actions</th>
                             </tr>
-
                         </thead>
 
                         <tbody>
@@ -545,37 +1317,37 @@ async function refreshVideoTable() {
                                 <tr>
 
                                     <td>
-                                        ${video.videoId}
+                                        ${video.videoId ?? "-"}
                                     </td>
 
                                     <td>
                                         <strong>
-                                            ${escapeHtml(video.title)}
+                                            ${escapeHtml(video.title || "")}
                                         </strong>
                                     </td>
 
                                     <td>
-                                        ${Number(video.views || 0).toLocaleString()}
+                                        ${video.views ?? 0}
                                     </td>
 
                                     <td>
-                                        ${Number(video.likes || 0).toLocaleString()}
+                                        ${video.likes ?? 0}
                                     </td>
 
                                     <td>
-                                        ${Number(video.comments || 0).toLocaleString()}
+                                        ${video.comments ?? 0}
                                     </td>
 
                                     <td>
-                                        ${Number(video.shares || 0).toLocaleString()}
+                                        ${video.shares ?? 0}
                                     </td>
 
                                     <td>
-                                        ${Number(video.watchTime || 0)}
+                                        ${video.watchTime ?? 0}
                                     </td>
 
                                     <td>
-                                        ${Number(video.ctr || 0)}%
+                                        ${video.ctr ?? 0}%
                                     </td>
 
                                     <td>
@@ -583,6 +1355,7 @@ async function refreshVideoTable() {
                                         <div class="btn-group">
 
                                             <button
+                                                type="button"
                                                 class="btn btn-sm btn-outline-primary"
                                                 onclick="editVideo(${video.videoId})">
 
@@ -591,6 +1364,7 @@ async function refreshVideoTable() {
                                             </button>
 
                                             <button
+                                                type="button"
                                                 class="btn btn-sm btn-outline-danger"
                                                 onclick="deleteVideo(${video.videoId})">
 
@@ -617,15 +1391,90 @@ async function refreshVideoTable() {
 
     } catch (error) {
 
+        console.error(
+            "VIDEOS LOAD ERROR:",
+            error
+        );
+
         container.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
+            <div class="alert alert-danger">
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load videos."
+                )}
             </div>
         `;
     }
 }
+// ======================================================
+// APPLICATION START
+// ======================================================
 
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
 
+        console.log(
+            "APP.JS INITIALIZED"
+        );
+
+        setupLogin();
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+}
+setupNavigation();
+
+setupCalendarForm();
+
+        const token =
+            localStorage.getItem(
+                "creatorhub_token"
+            );
+
+        const loginPage =
+            document.getElementById(
+                "loginPage"
+            );
+
+        const dashboardApp =
+            document.getElementById(
+                "dashboardApp"
+            );
+
+        if (token) {
+
+            if (loginPage) {
+                loginPage.classList.add(
+                    "d-none"
+                );
+            }
+
+            if (dashboardApp) {
+                dashboardApp.classList.remove(
+                    "d-none"
+                );
+            }
+
+            showPage("dashboard");
+
+        } else {
+
+            if (loginPage) {
+                loginPage.classList.remove(
+                    "d-none"
+                );
+            }
+
+            if (dashboardApp) {
+                dashboardApp.classList.add(
+                    "d-none"
+                );
+            }
+        }
+    }
+);
 // ======================================================
 // VIDEO FORM
 // ======================================================
@@ -635,22 +1484,32 @@ function showVideoForm(video = null) {
     const container =
         document.getElementById("videoFormContainer");
 
-    if (!container) return;
+    if (!container) {
+        console.warn("videoFormContainer not found");
+        return;
+    }
 
-    const editing =
-        video !== null;
+    const editing = video !== null;
 
     container.innerHTML = `
 
         <div class="data-card mb-4">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between
+                        align-items-center mb-3">
 
-                <h5 class="mb-0">
-                    ${editing ? "Edit Video" : "Add Video"}
-                </h5>
+                <div>
+                    <h5 class="mb-1">
+                        ${editing ? "Edit Video" : "Add Video"}
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Enter your video performance data.
+                    </p>
+                </div>
 
                 <button
+                    type="button"
                     class="btn btn-sm btn-outline-secondary"
                     onclick="closeVideoForm()">
 
@@ -662,27 +1521,40 @@ function showVideoForm(video = null) {
 
             <form id="videoForm">
 
+                <div class="mb-3">
+
+                    <label
+                        for="videoTitle"
+                        class="form-label">
+
+                        Video Title
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="videoTitle"
+                        class="form-control"
+                        maxlength="255"
+                        value="${
+                            editing
+                                ? escapeAttribute(video.title || "")
+                                : ""
+                        }"
+                        required>
+
+                </div>
+
                 <div class="row g-3">
 
                     <div class="col-md-6">
 
-                        <label class="form-label">
-                            Video Title
-                        </label>
+                        <label
+                            for="videoViews"
+                            class="form-label">
 
-                        <input
-                            type="text"
-                            id="videoTitle"
-                            class="form-control"
-                            value="${editing ? escapeAttribute(video.title) : ""}"
-                            required>
-
-                    </div>
-
-                    <div class="col-md-3">
-
-                        <label class="form-label">
                             Views
+
                         </label>
 
                         <input
@@ -690,15 +1562,23 @@ function showVideoForm(video = null) {
                             id="videoViews"
                             class="form-control"
                             min="0"
-                            value="${editing ? video.views : 0}"
+                            value="${
+                                editing
+                                    ? video.views ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-6">
 
-                        <label class="form-label">
+                        <label
+                            for="videoLikes"
+                            class="form-label">
+
                             Likes
+
                         </label>
 
                         <input
@@ -706,15 +1586,23 @@ function showVideoForm(video = null) {
                             id="videoLikes"
                             class="form-control"
                             min="0"
-                            value="${editing ? video.likes : 0}"
+                            value="${
+                                editing
+                                    ? video.likes ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-6">
 
-                        <label class="form-label">
+                        <label
+                            for="videoComments"
+                            class="form-label">
+
                             Comments
+
                         </label>
 
                         <input
@@ -722,15 +1610,23 @@ function showVideoForm(video = null) {
                             id="videoComments"
                             class="form-control"
                             min="0"
-                            value="${editing ? video.comments : 0}"
+                            value="${
+                                editing
+                                    ? video.comments ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-6">
 
-                        <label class="form-label">
+                        <label
+                            for="videoShares"
+                            class="form-label">
+
                             Shares
+
                         </label>
 
                         <input
@@ -738,15 +1634,23 @@ function showVideoForm(video = null) {
                             id="videoShares"
                             class="form-control"
                             min="0"
-                            value="${editing ? video.shares : 0}"
+                            value="${
+                                editing
+                                    ? video.shares ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-6">
 
-                        <label class="form-label">
+                        <label
+                            for="videoWatchTime"
+                            class="form-label">
+
                             Watch Time
+
                         </label>
 
                         <input
@@ -754,16 +1658,24 @@ function showVideoForm(video = null) {
                             id="videoWatchTime"
                             class="form-control"
                             min="0"
-                            step="0.1"
-                            value="${editing ? video.watchTime : 0}"
+                            step="0.01"
+                            value="${
+                                editing
+                                    ? video.watchTime ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-6">
 
-                        <label class="form-label">
+                        <label
+                            for="videoCtr"
+                            class="form-label">
+
                             CTR (%)
+
                         </label>
 
                         <input
@@ -771,8 +1683,12 @@ function showVideoForm(video = null) {
                             id="videoCtr"
                             class="form-control"
                             min="0"
-                            step="0.1"
-                            value="${editing ? video.ctr : 0}"
+                            step="0.01"
+                            value="${
+                                editing
+                                    ? video.ctr ?? 0
+                                    : 0
+                            }"
                             required>
 
                     </div>
@@ -797,16 +1713,26 @@ function showVideoForm(video = null) {
         </div>
     `;
 
-    document
-        .getElementById("videoForm")
-        .addEventListener("submit", async function(event) {
+    const form =
+        document.getElementById("videoForm");
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener(
+        "submit",
+        async event => {
 
             event.preventDefault();
 
             await saveVideo(
-                editing ? video.videoId : null
+                editing
+                    ? video.videoId
+                    : null
             );
-        });
+        }
+    );
 }
 
 
@@ -820,72 +1746,108 @@ async function saveVideo(videoId = null) {
         document.getElementById("videoFormError");
 
     const title =
-        document.getElementById("videoTitle").value.trim();
+        document.getElementById("videoTitle")
+            .value
+            .trim();
 
-    const body = {
+    const views =
+        Number(
+            document.getElementById("videoViews").value
+        );
 
-        title,
+    const likes =
+        Number(
+            document.getElementById("videoLikes").value
+        );
 
-        views:
-            Number(document.getElementById("videoViews").value),
+    const comments =
+        Number(
+            document.getElementById("videoComments").value
+        );
 
-        likes:
-            Number(document.getElementById("videoLikes").value),
+    const shares =
+        Number(
+            document.getElementById("videoShares").value
+        );
 
-        comments:
-            Number(document.getElementById("videoComments").value),
+    const watchTime =
+        Number(
+            document.getElementById("videoWatchTime").value
+        );
 
-        shares:
-            Number(document.getElementById("videoShares").value),
+    const ctr =
+        Number(
+            document.getElementById("videoCtr").value
+        );
 
-        watchTime:
-            Number(document.getElementById("videoWatchTime").value),
+    if (!title) {
+        errorContainer.textContent =
+            "Video title is required.";
+        return;
+    }
 
-        ctr:
-            Number(document.getElementById("videoCtr").value)
-    };
+    if (
+        [views, likes, comments, shares, watchTime, ctr]
+            .some(value => !Number.isFinite(value) || value < 0)
+    ) {
+        errorContainer.textContent =
+            "All numeric values must be zero or greater.";
+        return;
+    }
 
     try {
+
+        errorContainer.textContent =
+            "Saving...";
 
         await apiRequest(
             videoId
                 ? `/api/videos/${videoId}`
                 : "/api/videos",
-
             {
-                method:
-                    videoId ? "PUT" : "POST",
+                method: videoId
+                    ? "PUT"
+                    : "POST",
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body:
-                    JSON.stringify(body)
+                body: JSON.stringify({
+                    title,
+                    views,
+                    likes,
+                    comments,
+                    shares,
+                    watchTime,
+                    ctr
+                })
             }
+        );
+
+        console.log(
+            "VIDEO SAVED SUCCESSFULLY"
         );
 
         closeVideoForm();
 
-        await refreshVideoTable();
-
-        await loadDashboard();
+        await loadVideos();
 
     } catch (error) {
 
-        if (errorContainer) {
-            errorContainer.textContent =
-                error.message;
-        }
+        console.error(
+            "SAVE VIDEO ERROR:",
+            error
+        );
+
+        errorContainer.textContent =
+            error.message ||
+            "Failed to save video.";
     }
 }
-
-
 // ======================================================
 // EDIT VIDEO
 // ======================================================
 
 async function editVideo(videoId) {
+
+    console.log("EDIT VIDEO:", videoId);
 
     try {
 
@@ -894,16 +1856,21 @@ async function editVideo(videoId) {
                 `/api/videos/${videoId}`
             );
 
-        showVideoForm(video);
+        console.log("VIDEO TO EDIT:", video);
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        showVideoForm(video);
 
     } catch (error) {
 
-        alert(error.message);
+        console.error(
+            "EDIT VIDEO ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to load video."
+        );
     }
 }
 
@@ -913,6 +1880,8 @@ async function editVideo(videoId) {
 // ======================================================
 
 async function deleteVideo(videoId) {
+
+    console.log("DELETE VIDEO:", videoId);
 
     const confirmed =
         confirm(
@@ -932,16 +1901,25 @@ async function deleteVideo(videoId) {
             }
         );
 
-        await refreshVideoTable();
+        console.log(
+            "VIDEO DELETED SUCCESSFULLY"
+        );
 
-        await loadDashboard();
+        await loadVideos();
 
     } catch (error) {
 
-        alert(error.message);
+        console.error(
+            "DELETE VIDEO ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to delete video."
+        );
     }
 }
-
 
 // ======================================================
 // CLOSE VIDEO FORM
@@ -956,66 +1934,48 @@ function closeVideoForm() {
         container.innerHTML = "";
     }
 }
-
-
 // ======================================================
-// CONTENT IDEAS
+// CALENDAR
 // ======================================================
 
-async function loadContent() {
-    console.log("LOAD CONTENT STARTED");
+async function loadCalendar() {
 
-    const container = document.getElementById("contentContainer");
+    console.log("LOAD CALENDAR STARTED");
+
+    const container =
+        document.getElementById("calendarContainer");
+
+    if (!container) {
+        console.warn("calendarContainer not found");
+        return;
+    }
 
     container.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="mb-1">Content Ideas</h4>
-                <p class="text-muted mb-0">Manage your content ideas</p>
-            </div>
-
-            <button class="btn btn-primary" onclick="showContentForm()">
-                + Add Idea
-            </button>
-        </div>
-
-        <div id="contentFormContainer"></div>
-
-        <div id="contentTableContainer">
-            <div class="loading">Loading content ideas...</div>
+        <div class="data-card text-center py-4">
+            Loading calendar events...
         </div>
     `;
 
-    await refreshContentTable();
-}
-
-
-async function refreshContentTable() {
-
-    const container = document.getElementById("contentTableContainer");
-
-    if (!container) return;
-
-    container.innerHTML =
-        `<div class="loading">Loading content ideas...</div>`;
-
     try {
 
-        const content = await apiRequest("/api/content");
+        const events =
+            await apiRequest("/api/calendar");
 
-        if (!content || content.length === 0) {
+        console.log("CALENDAR EVENTS:", events);
+
+        if (!Array.isArray(events) || events.length === 0) {
 
             container.innerHTML = `
                 <div class="data-card text-center py-5">
-                    <h5>No content ideas yet</h5>
-                    <p class="text-muted">
-                        Create your first content idea.
+
+                    <h5 class="mb-2">
+                        No calendar events yet
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Create an event using the form above.
                     </p>
 
-                    <button class="btn btn-primary"
-                            onclick="showContentForm()">
-                        + Add Idea
-                    </button>
                 </div>
             `;
 
@@ -1023,6 +1983,7 @@ async function refreshContentTable() {
         }
 
         container.innerHTML = `
+
             <div class="data-card">
 
                 <div class="table-responsive">
@@ -1032,335 +1993,11 @@ async function refreshContentTable() {
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Title</th>
-                                <th>Category</th>
-                                <th>Status</th>
+                                <th>Content ID</th>
+                                <th>Date & Time</th>
+                                <th>Event Type</th>
                                 <th>Actions</th>
                             </tr>
-                        </thead>
-
-                        <tbody>
-
-                            ${content.map(item => `
-                                <tr>
-
-                                    <td>${item.ideaId}</td>
-
-                                    <td>
-                                        <strong>${escapeHtml(item.title)}</strong>
-                                    </td>
-
-                                    <td>
-                                        ${escapeHtml(item.category)}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHtml(item.status)}
-                                    </td>
-
-                                    <td>
-                                        <button
-                                            class="btn btn-sm btn-outline-primary"
-                                            onclick="editContent(${item.ideaId})">
-                                            Edit
-                                        </button>
-
-                                        <button
-                                            class="btn btn-sm btn-outline-danger"
-                                            onclick="deleteContent(${item.ideaId})">
-                                            Delete
-                                        </button>
-                                    </td>
-
-                                </tr>
-                            `).join("")}
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-        `;
-
-    } catch (error) {
-
-        container.innerHTML =
-            `<div class="error-message">${escapeHtml(error.message)}</div>`;
-    }
-}
-
-
-function showContentForm(idea = null) {
-
-    const container =
-        document.getElementById("contentFormContainer");
-
-    if (!container) return;
-
-    const editing = idea !== null;
-
-    container.innerHTML = `
-
-        <div class="data-card mb-4">
-
-            <div class="d-flex justify-content-between align-items-center mb-3">
-
-                <h5 class="mb-0">
-                    ${editing ? "Edit Content Idea" : "Add Content Idea"}
-                </h5>
-
-                <button
-                    class="btn btn-sm btn-outline-secondary"
-                    onclick="closeContentForm()">
-                    Cancel
-                </button>
-
-            </div>
-
-            <form id="contentForm">
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Title
-                    </label>
-
-                    <input
-                        type="text"
-                        id="contentTitle"
-                        class="form-control"
-                        value="${editing ? escapeHtml(idea.title) : ""}"
-                        required>
-
-                </div>
-
-                <div class="row g-3">
-
-                    <div class="col-md-6">
-
-                        <label class="form-label">
-                            Category
-                        </label>
-
-                        <input
-                            type="text"
-                            id="contentCategory"
-                            class="form-control"
-                            value="${editing ? escapeHtml(idea.category) : ""}"
-                            required>
-
-                    </div>
-
-                    <div class="col-md-6">
-
-                        <label class="form-label">
-                            Status
-                        </label>
-
-                        <select
-                            id="contentStatus"
-                            class="form-select"
-                            required>
-
-                            <option value="IDEA">IDEA</option>
-                            <option value="PLANNED">PLANNED</option>
-                            <option value="PUBLISHED">PUBLISHED</option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-                <div id="contentFormError"
-                     class="text-danger mt-3">
-                </div>
-
-                <button
-                    type="submit"
-                    class="btn btn-primary mt-3">
-
-                    ${editing ? "Update Idea" : "Save Idea"}
-
-                </button>
-
-            </form>
-
-        </div>
-    `;
-
-    if (editing && idea.status) {
-        document.getElementById("contentStatus").value =
-            idea.status;
-    }
-
-    document
-        .getElementById("contentForm")
-        .addEventListener("submit", async function(event) {
-
-            event.preventDefault();
-
-            await saveContent(
-                editing ? idea.ideaId : null
-            );
-
-        });
-}
-
-
-async function saveContent(ideaId = null) {
-
-    const errorContainer =
-        document.getElementById("contentFormError");
-
-    const body = {
-
-        title:
-            document.getElementById("contentTitle").value.trim(),
-
-        category:
-            document.getElementById("contentCategory").value.trim(),
-
-        status:
-            document.getElementById("contentStatus").value
-
-    };
-
-    try {
-
-        await apiRequest(
-            ideaId
-                ? `/api/content/${ideaId}`
-                : "/api/content",
-            {
-                method: ideaId ? "PUT" : "POST",
-
-                headers: {
-                    "Content-Type": "application/json"
-                },
-
-                body: JSON.stringify(body)
-            }
-        );
-
-        closeContentForm();
-
-        await refreshContentTable();
-
-        await loadDashboard();
-
-    } catch (error) {
-
-        if (errorContainer) {
-            errorContainer.textContent =
-                error.message;
-        }
-    }
-}
-
-
-async function editContent(ideaId) {
-
-    try {
-
-        const idea =
-            await apiRequest(`/api/content/${ideaId}`);
-
-        showContentForm(idea);
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-
-    } catch (error) {
-
-        alert(error.message);
-    }
-}
-
-
-async function deleteContent(ideaId) {
-
-    if (!confirm("Are you sure you want to delete this content idea?")) {
-        return;
-    }
-
-    try {
-
-        await apiRequest(`/api/content/${ideaId}`, {
-            method: "DELETE"
-        });
-
-        await refreshContentTable();
-
-        await loadDashboard();
-
-    } catch (error) {
-
-        alert(error.message);
-    }
-}
-
-
-function closeContentForm() {
-
-    const container =
-        document.getElementById("contentFormContainer");
-
-    if (container) {
-        container.innerHTML = "";
-    }
-}
-
-async function loadCalendar() {
-
-    const container =
-        document.getElementById("calendarContainer");
-
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="loading">
-            Loading calendar...
-        </div>
-    `;
-
-    try {
-
-        const events =
-            await apiRequest("/api/calendar");
-
-        if (!events || events.length === 0) {
-
-            container.innerHTML = `
-                <div class="data-card">
-                    No calendar events found.
-                </div>
-            `;
-
-            return;
-        }
-
-        container.innerHTML = `
-
-            <div class="data-card">
-
-                <div class="table-responsive">
-
-                    <table class="table">
-
-                        <thead>
-
-                            <tr>
-                                <th>ID</th>
-                                <th>Content ID</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                            </tr>
-
                         </thead>
 
                         <tbody>
@@ -1369,13 +2006,55 @@ async function loadCalendar() {
 
                                 <tr>
 
-                                    <td>${event.eventId}</td>
+                                    <td>
+                                        ${event.eventId ?? "-"}
+                                    </td>
 
-                                    <td>${event.contentId}</td>
+                                    <td>
+                                        ${event.contentId ?? "-"}
+                                    </td>
 
-                                    <td>${escapeHtml(event.eventDate)}</td>
+                                    <td>
+                                        ${escapeHtml(
+                                            formatCalendarDate(
+                                                event.eventDate
+                                            )
+                                        )}
+                                    </td>
 
-                                    <td>${escapeHtml(event.eventType)}</td>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            ${escapeHtml(
+                                                event.eventType || ""
+                                            )}
+                                        </span>
+                                    </td>
+
+                                    <td>
+
+                                        <div class="btn-group">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="editCalendarEvent(${event.eventId})">
+
+                                                Edit
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteCalendarEvent(${event.eventId})">
+
+                                                Delete
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
 
                                 </tr>
 
@@ -1392,164 +2071,593 @@ async function loadCalendar() {
 
     } catch (error) {
 
+        console.error(
+            "LOAD CALENDAR ERROR:",
+            error
+        );
+
         container.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
+            <div class="alert alert-danger">
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load calendar events."
+                )}
             </div>
         `;
     }
 }
 
 
-async function handleCalendarSubmit(event) {
+// ======================================================
+// FORMAT CALENDAR DATE
+// ======================================================
 
-    event.preventDefault();
+function formatCalendarDate(value) {
+
+    if (!value) {
+        return "-";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString();
+}
+
+
+// ======================================================
+// SAVE CALENDAR EVENT
+// ======================================================
+
+async function saveCalendar(eventId = null) {
 
     const message =
-        document.getElementById("calendarFormMessage");
+        document.getElementById(
+            "calendarFormMessage"
+        );
 
-    const contentIdValue =
-        document.getElementById("calendarContentId").value;
+    const contentIdInput =
+        document.getElementById(
+            "calendarContentId"
+        );
 
-    const eventDate =
-        document.getElementById("calendarEventDate").value;
+    const eventDateInput =
+        document.getElementById(
+            "calendarEventDate"
+        );
 
-    const eventType =
-        document.getElementById("calendarEventType").value;
+    const eventTypeInput =
+        document.getElementById(
+            "calendarEventType"
+        );
 
-    if (!eventDate || !eventType) {
-        message.innerHTML = `
-            <div class="error-message">
-                Date and event type are required.
-            </div>
-        `;
+    if (
+        !message ||
+        !contentIdInput ||
+        !eventDateInput ||
+        !eventTypeInput
+    ) {
+        console.error(
+            "Calendar form elements not found."
+        );
         return;
     }
 
-    const eventBody = {
-        contentId: contentIdValue
+    const contentIdValue =
+        contentIdInput.value.trim();
+
+    const eventDate =
+        eventDateInput.value;
+
+    const eventType =
+        eventTypeInput.value.trim();
+
+    if (!eventDate) {
+
+        message.textContent =
+            "Event date is required.";
+
+        return;
+    }
+
+    if (!eventType) {
+
+        message.textContent =
+            "Event type is required.";
+
+        return;
+    }
+
+    const contentId =
+        contentIdValue
             ? Number(contentIdValue)
-            : null,
-        eventDate: eventDate,
-        eventType: eventType
-    };
+            : null;
+
+    if (
+        contentIdValue &&
+        (!Number.isInteger(contentId) || contentId <= 0)
+    ) {
+
+        message.textContent =
+            "Content ID must be a valid positive number.";
+
+        return;
+    }
 
     try {
 
-        message.innerHTML = `
-            <div class="loading">
-                Creating event...
-            </div>
-        `;
+        message.textContent =
+            "Saving...";
 
-        await apiRequest("/api/calendar", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(eventBody)
-        });
+        await apiRequest(
+            eventId
+                ? `/api/calendar/${eventId}`
+                : "/api/calendar",
+            {
+                method: eventId
+                    ? "PUT"
+                    : "POST",
 
-        message.innerHTML = `
-            <div class="success-message">
-                Calendar event created successfully.
-            </div>
-        `;
+                body: JSON.stringify({
 
-        document.getElementById("calendarForm").reset();
+                    contentId,
+
+                    eventDate:
+
+                        eventDate.length === 16
+                            ? `${eventDate}:00`
+                            : eventDate,
+
+                    eventType
+                })
+            }
+        );
+
+        console.log(
+            "CALENDAR EVENT SAVED"
+        );
+
+        message.textContent =
+            "Event saved successfully.";
+
+        document
+            .getElementById("calendarForm")
+            .reset();
 
         await loadCalendar();
 
     } catch (error) {
 
-        message.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
-            </div>
-        `;
+        console.error(
+            "SAVE CALENDAR ERROR:",
+            error
+        );
+
+        message.textContent =
+            error.message ||
+            "Failed to save calendar event.";
     }
 }
 
-const calendarForm =
-    document.getElementById("calendarForm");
 
-if (calendarForm) {
-    calendarForm.addEventListener(
+// ======================================================
+// EDIT CALENDAR EVENT
+// ======================================================
+
+async function editCalendarEvent(eventId) {
+
+    console.log(
+        "EDIT CALENDAR EVENT:",
+        eventId
+    );
+
+    try {
+
+        const event =
+            await apiRequest(
+                `/api/calendar/${eventId}`
+            );
+
+        console.log(
+            "CALENDAR EVENT TO EDIT:",
+            event
+        );
+
+        const contentIdInput =
+            document.getElementById(
+                "calendarContentId"
+            );
+
+        const eventDateInput =
+            document.getElementById(
+                "calendarEventDate"
+            );
+
+        const eventTypeInput =
+            document.getElementById(
+                "calendarEventType"
+            );
+
+        if (!contentIdInput ||
+            !eventDateInput ||
+            !eventTypeInput) {
+
+            throw new Error(
+                "Calendar form elements not found."
+            );
+        }
+
+        contentIdInput.value =
+            event.contentId ?? "";
+
+        eventDateInput.value =
+            formatDateTimeLocal(
+                event.eventDate
+            );
+
+        eventTypeInput.value =
+            event.eventType ?? "";
+
+        const form =
+            document.getElementById(
+                "calendarForm"
+            );
+
+        if (form) {
+
+            form.dataset.editingId =
+                String(eventId);
+        }
+
+        const message =
+            document.getElementById(
+                "calendarFormMessage"
+            );
+
+        if (message) {
+
+            message.textContent =
+                `Editing event #${eventId}`;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "EDIT CALENDAR ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to load calendar event."
+        );
+    }
+}
+
+
+// ======================================================
+// DELETE CALENDAR EVENT
+// ======================================================
+
+async function deleteCalendarEvent(eventId) {
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this calendar event?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(
+            `/api/calendar/${eventId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        console.log(
+            "CALENDAR EVENT DELETED"
+        );
+
+        await loadCalendar();
+
+    } catch (error) {
+
+        console.error(
+            "DELETE CALENDAR ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to delete calendar event."
+        );
+    }
+}
+
+
+// ======================================================
+// FORMAT DATETIME FOR INPUT
+// ======================================================
+
+function formatDateTimeLocal(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    const date =
+        new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(2, "0");
+
+    const hours =
+        String(
+            date.getHours()
+        ).padStart(2, "0");
+
+    const minutes =
+        String(
+            date.getMinutes()
+        ).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+
+// ======================================================
+// CALENDAR FORM SUBMIT
+// ======================================================
+
+function setupCalendarForm() {
+
+    const form =
+        document.getElementById(
+            "calendarForm"
+        );
+
+    if (!form) {
+
+        console.warn(
+            "calendarForm not found."
+        );
+
+        return;
+    }
+
+    form.addEventListener(
         "submit",
-        handleCalendarSubmit
+        async event => {
+
+            event.preventDefault();
+
+            const editingId =
+                form.dataset.editingId;
+
+            await saveCalendar(
+                editingId
+                    ? Number(editingId)
+                    : null
+            );
+
+            delete form.dataset.editingId;
+        }
+    );
+
+    console.log(
+        "CALENDAR FORM READY"
     );
 }
 // ======================================================
-// SEO
+// SEO ASSISTANT
 // ======================================================
 
 async function loadSeo() {
 
+    console.log("LOAD SEO STARTED");
+
     const container =
         document.getElementById("seoContainer");
 
-    if (!container) return;
+    if (!container) {
+        console.warn("seoContainer not found");
+        return;
+    }
 
     container.innerHTML = `
-        <div class="loading">
+        <div class="data-card text-center py-4">
             Loading SEO data...
         </div>
     `;
 
     try {
 
-        const seo =
+        const seoData =
             await apiRequest("/api/seo");
 
-        if (!seo || seo.length === 0) {
+        console.log("SEO DATA:", seoData);
+
+        if (!Array.isArray(seoData) || seoData.length === 0) {
 
             container.innerHTML = `
-                <div class="data-card">
-                    No SEO records found.
-                </div>
+                <div class="data-card text-center py-5">
+
+                    <h4 class="mb-2">
+                        No SEO data yet
+                    </h4>
+
+                    <p class="text-muted mb-4">
+                        Create SEO data for your content ideas.
+                    </p>
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="showSeoForm()">
+
+                        + Add SEO Data
+
+                    </button>
+
+                                </div>
+
+                <div id="seoFormContainer"></div>
             `;
 
             return;
         }
 
-        container.innerHTML =
-            seo.map(item => `
+        container.innerHTML = `
 
-                <div class="data-card mb-3">
+            <div class="d-flex justify-content-between
+                        align-items-center mb-4">
 
-                    <h5>
-                        SEO #${item.seoId}
-                    </h5>
+                <div>
+                    <h4 class="mb-1">
+                        SEO Data
+                    </h4>
 
-                    <p>
-                        <strong>Content ID:</strong>
-                        ${item.contentId}
+                    <p class="text-muted mb-0">
+                        Manage keywords, hashtags and descriptions.
                     </p>
+                </div>
 
-                    <p>
-                        <strong>Keywords:</strong>
-                        ${escapeHtml(item.keywords)}
-                    </p>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="showSeoForm()">
 
-                    <p>
-                        <strong>Hashtags:</strong>
-                        ${escapeHtml(item.hashtags)}
-                    </p>
+                    + Add SEO Data
 
-                    <p class="mb-0">
-                        <strong>Description:</strong>
-                        ${escapeHtml(item.description)}
-                    </p>
+                </button>
+
+            </div>
+
+            <div id="seoFormContainer"></div>
+
+            <div class="data-card">
+
+                <div class="table-responsive">
+
+                    <table class="table align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Content ID</th>
+                                <th>Keywords</th>
+                                <th>Hashtags</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            ${seoData.map(seo => `
+
+                                <tr>
+
+                                    <td>
+                                        ${seo.seoId ?? "-"}
+                                    </td>
+
+                                    <td>
+                                        ${seo.contentId ?? "-"}
+                                    </td>
+
+                                    <td>
+                                        ${escapeHtml(
+                                            seo.keywords || ""
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        ${escapeHtml(
+                                            seo.hashtags || ""
+                                        )}
+                                    </td>
+
+                                    <td>
+                                        ${escapeHtml(
+                                            seo.description || ""
+                                        )}
+                                    </td>
+
+                                    <td>
+
+                                        <div class="btn-group">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="editSeo(${seo.seoId})">
+
+                                                Edit
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteSeo(${seo.seoId})">
+
+                                                Delete
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            `).join("")}
+
+                        </tbody>
+
+                    </table>
 
                 </div>
 
-            `).join("");
+            </div>
+        `;
 
     } catch (error) {
 
+        console.error(
+            "SEO LOAD ERROR:",
+            error
+        );
+
         container.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
+            <div class="alert alert-danger">
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load SEO data."
+                )}
             </div>
         `;
     }
@@ -1557,18 +2665,468 @@ async function loadSeo() {
 
 
 // ======================================================
+// ======================================================
+// SHOW SEO FORM
+// ======================================================
+
+async function showSeoForm(seo = null) {
+
+    const container =
+        document.getElementById("seoFormContainer");
+
+    if (!container) {
+        console.warn("seoFormContainer not found");
+        return;
+    }
+
+    const editing =
+        seo !== null;
+
+    container.innerHTML = `
+
+        <div class="data-card mb-4">
+
+            <h5 class="mb-3">
+                ${editing ? "Edit SEO Data" : "Add SEO Data"}
+            </h5>
+
+            <form id="seoForm">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Content Idea
+                    </label>
+
+                    <select
+                        id="seoContentId"
+                        class="form-select"
+                        required
+                    >
+
+                        <option value="">
+                            Loading content ideas...
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Keywords
+                    </label>
+
+                    <input
+                        type="text"
+                        id="seoKeywords"
+                        class="form-control"
+                        value="${escapeHtml(seo?.keywords || "")}"
+                        placeholder="youtube, creator, content"
+                    >
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Hashtags
+                    </label>
+
+                    <input
+                        type="text"
+                        id="seoHashtags"
+                        class="form-control"
+                        value="${escapeHtml(seo?.hashtags || "")}"
+                        placeholder="#youtube #creator #content"
+                    >
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="seoDescription"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Enter SEO optimized description"
+                    >${escapeHtml(seo?.description || "")}</textarea>
+
+                </div>
+
+                <div
+                    id="seoFormMessage"
+                    class="text-danger mb-3">
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary">
+
+                    ${editing ? "Update SEO" : "Save SEO"}
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary ms-2"
+                    onclick="closeSeoForm()">
+
+                    Cancel
+
+                </button>
+
+            </form>
+
+        </div>
+    `;
+
+    // ==================================================
+    // LOAD CONTENT IDEAS
+    // ==================================================
+
+    try {
+
+        const contentIdeas =
+            await apiRequest("/api/content");
+
+        const select =
+            document.getElementById("seoContentId");
+
+        if (!select) {
+            return;
+        }
+
+        if (
+            !Array.isArray(contentIdeas) ||
+            contentIdeas.length === 0
+        ) {
+
+            select.innerHTML = `
+                <option value="">
+                    No content ideas available
+                </option>
+            `;
+
+        } else {
+
+            select.innerHTML = `
+                <option value="">
+                    Select content idea
+                </option>
+
+                ${contentIdeas.map(idea => `
+
+                    <option
+                        value="${idea.ideaId}"
+                        ${
+                            editing &&
+                            Number(idea.ideaId) ===
+                            Number(seo.contentId)
+                                ? "selected"
+                                : ""
+                        }
+                    >
+                        ${escapeHtml(
+                            idea.title ||
+                            `Content Idea #${idea.ideaId}`
+                        )}
+                    </option>
+
+                `).join("")}
+            `;
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "LOAD CONTENT IDEAS ERROR:",
+            error
+        );
+
+        const select =
+            document.getElementById("seoContentId");
+
+        if (select) {
+
+            select.innerHTML = `
+                <option value="">
+                    Failed to load content ideas
+                </option>
+            `;
+
+        }
+    }
+
+    // ==================================================
+    // FORM SUBMIT
+    // ==================================================
+
+    const form =
+        document.getElementById("seoForm");
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            await saveSeo(
+                editing
+                    ? seo.seoId
+                    : null
+            );
+
+        }
+    );
+}
+
+
+// ======================================================
+// SAVE SEO
+// ======================================================
+
+async function saveSeo(seoId = null) {
+
+    const message =
+        document.getElementById("seoFormMessage");
+
+    const contentSelect =
+        document.getElementById("seoContentId");
+
+    const keywordsInput =
+        document.getElementById("seoKeywords");
+
+    const hashtagsInput =
+        document.getElementById("seoHashtags");
+
+    const descriptionInput =
+        document.getElementById("seoDescription");
+
+    if (!message ||
+        !contentSelect ||
+        !keywordsInput ||
+        !hashtagsInput ||
+        !descriptionInput) {
+
+        console.error(
+            "SEO FORM ELEMENTS NOT FOUND"
+        );
+
+        return;
+    }
+
+    const contentId =
+        Number(contentSelect.value);
+
+    const keywords =
+        keywordsInput.value.trim();
+
+    const hashtags =
+        hashtagsInput.value.trim();
+
+    const description =
+        descriptionInput.value.trim();
+
+    // ==================================================
+    // VALIDATE CONTENT IDEA
+    // ==================================================
+
+    if (
+        !Number.isInteger(contentId) ||
+        contentId <= 0
+    ) {
+
+        message.textContent =
+            "Please select a valid content idea.";
+
+        return;
+    }
+
+    try {
+
+        message.textContent =
+            "Saving...";
+
+        await apiRequest(
+            seoId
+                ? `/api/seo/${seoId}`
+                : "/api/seo",
+            {
+
+                method:
+                    seoId
+                        ? "PUT"
+                        : "POST",
+
+                body:
+                    JSON.stringify({
+
+                        contentId,
+
+                        keywords,
+
+                        hashtags,
+
+                        description
+
+                    })
+
+            }
+        );
+
+        console.log(
+            "SEO SAVED SUCCESSFULLY"
+        );
+
+        closeSeoForm();
+
+        await loadSeo();
+
+    } catch (error) {
+
+        console.error(
+            "SAVE SEO ERROR:",
+            error
+        );
+
+        message.textContent =
+            error.message ||
+            "Failed to save SEO data.";
+
+    }
+}
+// ======================================================
+// EDIT SEO
+// ======================================================
+
+async function editSeo(seoId) {
+
+    console.log(
+        "EDIT SEO:",
+        seoId
+    );
+
+    try {
+
+        const seo =
+            await apiRequest(
+                `/api/seo/${seoId}`
+            );
+
+        console.log(
+            "SEO TO EDIT:",
+            seo
+        );
+
+        showSeoForm(seo);
+
+    } catch (error) {
+
+        console.error(
+            "EDIT SEO ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to load SEO data."
+        );
+    }
+}
+
+
+// ======================================================
+// DELETE SEO
+// ======================================================
+
+async function deleteSeo(seoId) {
+
+    console.log(
+        "DELETE SEO:",
+        seoId
+    );
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this SEO data?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(
+            `/api/seo/${seoId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        console.log(
+            "SEO DELETED SUCCESSFULLY"
+        );
+
+        await loadSeo();
+
+    } catch (error) {
+
+        console.error(
+            "DELETE SEO ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to delete SEO data."
+        );
+    }
+}
+
+
+// ======================================================
+// CLOSE SEO FORM
+// ======================================================
+
+function closeSeoForm() {
+
+    const container =
+        document.getElementById("seoFormContainer");
+
+    if (container) {
+        container.innerHTML = "";
+    }
+}
+// ======================================================
 // REPORTS
 // ======================================================
 
 async function loadReports() {
 
+    console.log("LOAD REPORTS STARTED");
+
     const container =
         document.getElementById("reportsContainer");
 
-    if (!container) return;
+    if (!container) {
+        console.warn("reportsContainer not found");
+        return;
+    }
 
     container.innerHTML = `
-        <div class="loading">
+        <div class="data-card text-center py-4">
             Loading reports...
         </div>
     `;
@@ -1578,11 +3136,47 @@ async function loadReports() {
         const reports =
             await apiRequest("/api/reports");
 
-        if (!reports || reports.length === 0) {
+        console.log("REPORTS:", reports);
+
+        if (!Array.isArray(reports) || reports.length === 0) {
 
             container.innerHTML = `
-                <div class="data-card">
-                    No reports found.
+                <div class="d-flex justify-content-between
+                            align-items-center mb-4">
+
+                    <div>
+                        <h4 class="mb-1">
+                            Reports
+                        </h4>
+
+                        <p class="text-muted mb-0">
+                            Track your monthly content performance.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="showReportForm()">
+
+                        + Add Report
+
+                    </button>
+
+                </div>
+
+                <div id="reportFormContainer"></div>
+
+                <div class="data-card text-center py-5">
+
+                    <h4 class="mb-2">
+                        No reports yet
+                    </h4>
+
+                    <p class="text-muted mb-0">
+                        Add your first monthly report.
+                    </p>
+
                 </div>
             `;
 
@@ -1591,11 +3185,37 @@ async function loadReports() {
 
         container.innerHTML = `
 
+            <div class="d-flex justify-content-between
+                        align-items-center mb-4">
+
+                <div>
+                    <h4 class="mb-1">
+                        Reports
+                    </h4>
+
+                    <p class="text-muted mb-0">
+                        Track your monthly content performance.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="showReportForm()">
+
+                    + Add Report
+
+                </button>
+
+            </div>
+
+            <div id="reportFormContainer"></div>
+
             <div class="data-card">
 
                 <div class="table-responsive">
 
-                    <table class="table">
+                    <table class="table align-middle">
 
                         <thead>
 
@@ -1603,7 +3223,8 @@ async function loadReports() {
                                 <th>ID</th>
                                 <th>Month</th>
                                 <th>Total Views</th>
-                                <th>Engagement</th>
+                                <th>Average Engagement</th>
+                                <th>Actions</th>
                             </tr>
 
                         </thead>
@@ -1614,18 +3235,52 @@ async function loadReports() {
 
                                 <tr>
 
-                                    <td>${report.reportId}</td>
-
                                     <td>
-                                        ${escapeHtml(report.reportMonth)}
+                                        ${report.reportId ?? "-"}
                                     </td>
 
                                     <td>
-                                        ${Number(report.totalViews || 0).toLocaleString()}
+                                        ${escapeHtml(
+                                            report.reportMonth || ""
+                                        )}
                                     </td>
 
                                     <td>
-                                        ${Number(report.averageEngagement || 0).toFixed(1)}%
+                                        ${Number(
+                                            report.totalViews ?? 0
+                                        ).toLocaleString()}
+                                    </td>
+
+                                    <td>
+                                        ${Number(
+                                            report.averageEngagement ?? 0
+                                        ).toFixed(2)}%
+                                    </td>
+
+                                    <td>
+
+                                        <div class="btn-group">
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                onclick="editReport(${report.reportId})">
+
+                                                Edit
+
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteReport(${report.reportId})">
+
+                                                Delete
+
+                                            </button>
+
+                                        </div>
+
                                     </td>
 
                                 </tr>
@@ -1643,9 +3298,17 @@ async function loadReports() {
 
     } catch (error) {
 
+        console.error(
+            "REPORTS LOAD ERROR:",
+            error
+        );
+
         container.innerHTML = `
-            <div class="error-message">
-                ${escapeHtml(error.message)}
+            <div class="alert alert-danger">
+                ${escapeHtml(
+                    error.message ||
+                    "Failed to load reports."
+                )}
             </div>
         `;
     }
@@ -1653,102 +3316,328 @@ async function loadReports() {
 
 
 // ======================================================
-// NAVIGATION
+// SHOW REPORT FORM
 // ======================================================
 
-document
-    .querySelectorAll(".nav-btn")
-    .forEach(button => {
+function showReportForm(report = null) {
 
-        button.addEventListener("click", async () => {
+    const container =
+        document.getElementById("reportFormContainer");
 
-            const page =
-                button.dataset.page;
+    if (!container) {
+        console.warn("reportFormContainer not found");
+        return;
+    }
 
-            document
-                .querySelectorAll(".nav-btn")
-                .forEach(btn =>
-                    btn.classList.remove("active")
+    const editing =
+        report !== null;
+
+    container.innerHTML = `
+
+        <div class="data-card mb-4">
+
+            <h5 class="mb-3">
+                ${editing ? "Edit Report" : "Add Report"}
+            </h5>
+
+            <form id="reportForm">
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Report Month
+                    </label>
+
+                    <input
+                        type="date"
+                        id="reportMonth"
+                        class="form-control"
+                        value="${editing ? report.reportMonth : ""}"
+                        required
+                    >
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Total Views
+                    </label>
+
+                    <input
+                        type="number"
+                        id="reportTotalViews"
+                        class="form-control"
+                        min="0"
+                        value="${editing ? report.totalViews : 0}"
+                        required
+                    >
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Average Engagement (%)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="reportAverageEngagement"
+                        class="form-control"
+                        min="0"
+                        step="0.01"
+                        value="${editing ? report.averageEngagement : 0}"
+                        required
+                    >
+
+                </div>
+
+                <div
+                    id="reportFormMessage"
+                    class="text-danger mb-3">
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary">
+
+                    ${editing ? "Update Report" : "Save Report"}
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-secondary ms-2"
+                    onclick="closeReportForm()">
+
+                    Cancel
+
+                </button>
+
+            </form>
+
+        </div>
+    `;
+
+    document
+        .getElementById("reportForm")
+        .addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+                await saveReport(
+                    editing
+                        ? report.reportId
+                        : null
                 );
-
-            button.classList.add("active");
-
-            document
-                .querySelectorAll(".page")
-                .forEach(section =>
-                    section.classList.add("d-none")
-                );
-
-            const target =
-                document.getElementById(
-                    `page-${page}`
-                );
-
-            if (target) {
-                target.classList.remove("d-none");
             }
-
-            if (page === "dashboard") {
-                await loadDashboard();
-            }
-
-            if (page === "videos") {
-                await loadVideos();
-            }
-
-            if (page === "content") {
-                await loadContent();
-            }
-
-            if (page === "calendar") {
-                await loadCalendar();
-            }
-
-            if (page === "seo") {
-                await loadSeo();
-            }
-
-            if (page === "reports") {
-                await loadReports();
-            }
-
-        });
-
-    });
-
-
-// ======================================================
-// HTML SAFETY
-// ======================================================
-
-function escapeHtml(value) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent =
-        value ?? "";
-
-    return div.innerHTML;
+        );
 }
 
 
-function escapeAttribute(value) {
+// ======================================================
+// SAVE REPORT
+// ======================================================
 
-    return escapeHtml(value)
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+async function saveReport(reportId = null) {
+
+    const message =
+        document.getElementById("reportFormMessage");
+
+    const reportMonth =
+        document.getElementById("reportMonth")
+            .value;
+
+    const totalViews =
+        Number(
+            document.getElementById("reportTotalViews").value
+        );
+
+    const averageEngagement =
+        Number(
+            document.getElementById(
+                "reportAverageEngagement"
+            ).value
+        );
+
+    if (!reportMonth) {
+
+        message.textContent =
+            "Report month is required.";
+
+        return;
+    }
+
+    if (
+        !Number.isFinite(totalViews) ||
+        totalViews < 0
+    ) {
+
+        message.textContent =
+            "Total views must be zero or greater.";
+
+        return;
+    }
+
+    if (
+        !Number.isFinite(averageEngagement) ||
+        averageEngagement < 0
+    ) {
+
+        message.textContent =
+            "Average engagement must be zero or greater.";
+
+        return;
+    }
+
+    try {
+
+        message.textContent =
+            "Saving...";
+
+        await apiRequest(
+            reportId
+                ? `/api/reports/${reportId}`
+                : "/api/reports",
+            {
+                method: reportId
+                    ? "PUT"
+                    : "POST",
+
+                body: JSON.stringify({
+                    reportMonth,
+                    totalViews,
+                    averageEngagement
+                })
+            }
+        );
+
+        console.log(
+            "REPORT SAVED SUCCESSFULLY"
+        );
+
+        closeReportForm();
+
+        await loadReports();
+
+    } catch (error) {
+
+        console.error(
+            "SAVE REPORT ERROR:",
+            error
+        );
+
+        message.textContent =
+            error.message ||
+            "Failed to save report.";
+    }
 }
 
 
 // ======================================================
-// AUTO LOGIN
+// EDIT REPORT
 // ======================================================
 
-if (token) {
+async function editReport(reportId) {
 
-    showApp();
+    console.log(
+        "EDIT REPORT:",
+        reportId
+    );
 
-    loadDashboard();
+    try {
 
+        const report =
+            await apiRequest(
+                `/api/reports/${reportId}`
+            );
+
+        console.log(
+            "REPORT TO EDIT:",
+            report
+        );
+
+        showReportForm(report);
+
+    } catch (error) {
+
+        console.error(
+            "EDIT REPORT ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to load report."
+        );
+    }
 }
+
+
+// ======================================================
+// DELETE REPORT
+// ======================================================
+
+async function deleteReport(reportId) {
+
+    console.log(
+        "DELETE REPORT:",
+        reportId
+    );
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this report?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(
+            `/api/reports/${reportId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        console.log(
+            "REPORT DELETED SUCCESSFULLY"
+        );
+
+        await loadReports();
+
+    } catch (error) {
+
+        console.error(
+            "DELETE REPORT ERROR:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Failed to delete report."
+        );
+    }
+}
+
+
+// ======================================================
+// CLOSE REPORT FORM
+// ======================================================
+
+function closeReportForm() {
+
+    const container =
+        document.getElementById("reportFormContainer");
+
+    if (container) {
+        container.innerHTML = "";
+    }
+}
+

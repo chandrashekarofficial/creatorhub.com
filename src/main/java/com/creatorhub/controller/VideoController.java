@@ -34,8 +34,24 @@ public class VideoController {
 
     @GetMapping
     public List<VideoResponse> getAll(Authentication authentication) {
+
+        System.out.println("=================================");
+        System.out.println("VIDEO CONTROLLER -> GET ALL");
+        System.out.println("AUTH NAME -> " + authentication.getName());
+        System.out.println("AUTH AUTHORITIES -> "
+                + authentication.getAuthorities());
+
         Long userId = getUserId(authentication);
-        return videoService.getAll(userId);
+
+        System.out.println("VIDEO USER ID -> " + userId);
+
+        List<VideoResponse> videos =
+                videoService.getAll(userId);
+
+        System.out.println("VIDEOS FOUND -> " + videos.size());
+        System.out.println("=================================");
+
+        return videos;
     }
 
     @GetMapping("/{videoId}")
@@ -44,6 +60,7 @@ public class VideoController {
             Authentication authentication) {
 
         Long userId = getUserId(authentication);
+
         return videoService.getById(videoId, userId);
     }
 
@@ -53,6 +70,7 @@ public class VideoController {
             Authentication authentication) {
 
         Long userId = getUserId(authentication);
+
         return videoService.getAnalytics(videoId, userId);
     }
 
@@ -63,7 +81,12 @@ public class VideoController {
             Authentication authentication) {
 
         Long userId = getUserId(authentication);
-        return videoService.update(videoId, request, userId);
+
+        return videoService.update(
+                videoId,
+                request,
+                userId
+        );
     }
 
     @DeleteMapping("/{videoId}")
@@ -72,12 +95,20 @@ public class VideoController {
             Authentication authentication) {
 
         Long userId = getUserId(authentication);
+
         videoService.delete(videoId, userId);
 
         return ResponseEntity.noContent().build();
     }
 
     private Long getUserId(Authentication authentication) {
+
+        if (authentication == null) {
+            throw new IllegalStateException(
+                    "Authentication is null"
+            );
+        }
+
         return Long.valueOf(authentication.getName());
     }
 }

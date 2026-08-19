@@ -218,13 +218,26 @@ body {
 /* ================= DASHBOARD CARDS ================= */
 
 .stat-card {
+    position: relative;
+    overflow: hidden;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 15px;
-    padding: 22px;
-    min-height: 125px;
+    border-radius: 18px;
+    padding: 24px;
+    min-height: 135px;
     box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    right: -25px;
+    top: -25px;
+    border-radius: 50%;
+    background: #eef2ff;
 }
 
 .stat-card:hover {
@@ -233,16 +246,23 @@ body {
 }
 
 .stat-card h6 {
+    position: relative;
+    z-index: 1;
     color: #6b7280;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
 }
 
 .stat-card h3 {
+    position: relative;
+    z-index: 1;
     color: #111827;
-    font-size: 27px;
+    font-size: 30px;
     font-weight: 700;
+    letter-spacing: -0.02em;
     margin: 0;
 }
 
@@ -259,6 +279,31 @@ body {
 
 .data-card h5 {
     font-weight: 700;
+}
+
+
+/* ================= CHARTS ================= */
+
+.chart-card {
+    min-height: 390px;
+    border-radius: 18px;
+}
+
+.chart-header h5 {
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.chart-header p {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    margin-top: 20px;
 }
 
 
@@ -372,62 +417,17 @@ body {
         padding: 30px 22px;
     }
 }
-/* ================= DASHBOARD POLISH ================= */
+/* ================= STAT ICONS ================= */
 
-.stat-card {
-    position: relative;
-    overflow: hidden;
-    border-radius: 18px;
-    padding: 24px;
-    min-height: 135px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card::after {
-    content: "";
-    position: absolute;
-    width: 70px;
-    height: 70px;
-    right: -25px;
-    top: -25px;
-    border-radius: 50%;
+.stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #eef2ff;
-}
-
-.stat-card h6 {
-    position: relative;
-    z-index: 1;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 12px;
-}
-
-.stat-card h3 {
-    position: relative;
-    z-index: 1;
-    font-size: 30px;
-    letter-spacing: -0.02em;
-}
-
-.chart-card {
-    min-height: 390px;
-    border-radius: 18px;
-}
-
-.chart-header h5 {
-    margin-bottom: 4px;
+    color: #4f46e5;
     font-size: 16px;
-}
-
-.chart-header p {
-    margin: 0;
-    color: #9ca3af;
-    font-size: 13px;
-}
-
-.chart-wrapper {
-    position: relative;
-    height: 300px;
-    margin-top: 20px;
+    margin-bottom: 16px;
 }
