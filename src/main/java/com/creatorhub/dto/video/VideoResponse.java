@@ -8,5 +8,8 @@ public record VideoResponse(
         long comments,
         long shares,
         double watchTime,
-        double ctr
+        double ctr,
+        long subscribers,
+        double revenue,
+        long impressions
 ) {}

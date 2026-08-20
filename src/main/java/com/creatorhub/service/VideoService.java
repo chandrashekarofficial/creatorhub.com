@@ -36,7 +36,10 @@ public class VideoService {
                 .shares(request.shares())
                 .watchTime(request.watchTime())
                 .ctr(request.ctr())
-                .build();
+.subscribers(request.subscribers())
+.revenue(request.revenue())
+.impressions(request.impressions())
+.build();
 
         Video savedVideo = videoRepository.save(video);
 
@@ -86,6 +89,9 @@ public class VideoService {
         video.setShares(request.shares());
         video.setWatchTime(request.watchTime());
         video.setCtr(request.ctr());
+video.setSubscribers(request.subscribers());
+video.setRevenue(request.revenue());
+video.setImpressions(request.impressions());
 
         Video savedVideo = videoRepository.save(video);
 
@@ -186,15 +192,18 @@ public class VideoService {
 
     private VideoResponse toVideoResponse(Video video) {
         return new VideoResponse(
-                video.getVideoId(),
-                video.getTitle(),
-                video.getViews(),
-                video.getLikes(),
-                video.getComments(),
-                video.getShares(),
-                video.getWatchTime(),
-                video.getCtr()
-        );
+        video.getVideoId(),
+        video.getTitle(),
+        video.getViews(),
+        video.getLikes(),
+        video.getComments(),
+        video.getShares(),
+        video.getWatchTime(),
+        video.getCtr(),
+        video.getSubscribers(),
+        video.getRevenue(),
+        video.getImpressions()
+);
     }
 
     private AnalyticsResponse toAnalyticsResponse(Analytics analytics) {

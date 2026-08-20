@@ -23,5 +23,14 @@ public record VideoRequest(
         double watchTime,
 
         @PositiveOrZero(message = "CTR cannot be negative")
-        double ctr
+        double ctr,
+
+        @PositiveOrZero(message = "Subscribers cannot be negative")
+        long subscribers,
+
+        @PositiveOrZero(message = "Revenue cannot be negative")
+        double revenue,
+
+        @PositiveOrZero(message = "Impressions cannot be negative")
+        long impressions
 ) {}

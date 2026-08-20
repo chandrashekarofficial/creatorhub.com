@@ -22,7 +22,8 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public DashboardResponse getDashboard(Long userId) {
 
-        List<Video> videos = videoRepository.findByUserUserId(userId);
+        List<Video> videos =
+                videoRepository.findByUserUserId(userId);
 
         long totalVideos = videos.size();
 
@@ -42,46 +43,61 @@ public class DashboardService {
                 .mapToLong(Video::getShares)
                 .sum();
 
+        double totalWatchTime = videos.stream()
+                .mapToDouble(Video::getWatchTime)
+                .sum();
+
+        long totalSubscribers = videos.stream()
+                .mapToLong(Video::getSubscribers)
+                .sum();
+
+        double totalRevenue = videos.stream()
+                .mapToDouble(Video::getRevenue)
+                .sum();
+
+        long totalImpressions = videos.stream()
+                .mapToLong(Video::getImpressions)
+                .sum();
+
         double averageCtr = videos.stream()
                 .mapToDouble(Video::getCtr)
                 .average()
                 .orElse(0.0);
 
+        /*
+         * Engagement rate =
+         * (Likes + Comments + Shares) / Views × 100
+         */
+        double averageEngagement = videos.stream()
+                .filter(video -> video.getViews() > 0)
+                .mapToDouble(video ->
+                        ((double) video.getLikes()
+                                + video.getComments()
+                                + video.getShares())
+                                / video.getViews() * 100.0
+                )
+                .average()
+                .orElse(0.0);
+
         long totalContentIdeas =
-                contentIdeaRepository.findByUserUserIdOrderByPlannedDateAsc(userId)
+                contentIdeaRepository
+                        .findByUserUserIdOrderByPlannedDateAsc(userId)
                         .size();
 
         long totalCalendarEvents =
-                calendarEventRepository.findByUserUserIdOrderByEventDateAsc(userId)
+                calendarEventRepository
+                        .findByUserUserIdOrderByEventDateAsc(userId)
                         .size();
 
         long totalSeoRecords =
-                seoDataRepository.findByUserUserIdOrderBySeoIdAsc(userId)
+                seoDataRepository
+                        .findByUserUserIdOrderBySeoIdAsc(userId)
                         .size();
 
         long totalReports =
-                reportRepository.findByUserUserIdOrderByReportMonthDesc(userId)
+                reportRepository
+                        .findByUserUserIdOrderByReportMonthDesc(userId)
                         .size();
-
-        double averageEngagement = 0.0;
-
-        if (!videos.isEmpty()) {
-            double totalEngagement = videos.stream()
-                    .mapToDouble(video -> {
-                        if (video.getViews() == 0) {
-                            return 0.0;
-                        }
-
-                        return (
-                                (double) video.getLikes()
-                                        + video.getComments()
-                                        + video.getShares()
-                        ) / video.getViews() * 100.0;
-                    })
-                    .sum();
-
-            averageEngagement = totalEngagement / videos.size();
-        }
 
         return new DashboardResponse(
                 totalVideos,
@@ -89,6 +105,10 @@ public class DashboardService {
                 totalLikes,
                 totalComments,
                 totalShares,
+                totalWatchTime,
+                totalSubscribers,
+                totalRevenue,
+                totalImpressions,
                 averageCtr,
                 averageEngagement,
                 totalContentIdeas,
