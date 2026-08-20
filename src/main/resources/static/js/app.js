@@ -1497,6 +1497,15 @@ function setupNavigation() {
                 );
 
                 if (page) {
+
+                    // Update active navigation button
+                    buttons.forEach(btn => {
+                        btn.classList.remove("active");
+                    });
+
+                    button.classList.add("active");
+
+                    // Show selected page
                     showPage(page);
                 }
             }
