@@ -1,4 +1,4 @@
-// ======================================================
+﻿// ======================================================
 // CREATORHUB - APP.JS
 // ======================================================
 
@@ -97,7 +97,6 @@ function getStatusClass(status) {
     }
 }
 
-
 // ======================================================
 // DASHBOARD
 // ======================================================
@@ -116,137 +115,230 @@ async function loadDashboard() {
 
     try {
 
+        // --------------------------------------------------
+        // LOAD DASHBOARD DATA
+        // --------------------------------------------------
+
         const dashboard =
             await apiRequest("/api/dashboard");
 
         console.log("DASHBOARD:", dashboard);
 
+
+        // --------------------------------------------------
+        // VALUES
+        // --------------------------------------------------
+
+        const totalContentIdeas =
+            dashboard.totalContentIdeas ?? 0;
+
+        const totalVideos =
+            dashboard.totalVideos ?? 0;
+
+        const totalReports =
+            dashboard.totalReports ?? 0;
+
+        const totalViews =
+            dashboard.totalViews ?? 0;
+
+        const totalLikes =
+            dashboard.totalLikes ?? 0;
+
+        const totalComments =
+            dashboard.totalComments ?? 0;
+
+        const totalShares =
+            dashboard.totalShares ?? 0;
+
+        const averageCtr =
+            Number(dashboard.averageCtr ?? 0).toFixed(2);
+
+        const averageEngagement =
+            Number(
+                dashboard.averageEngagement ?? 0
+            ).toFixed(2);
+
+        const totalCalendarEvents =
+            dashboard.totalCalendarEvents ?? 0;
+
+
+        // --------------------------------------------------
+        // DASHBOARD CARDS
+        // --------------------------------------------------
+
         dashboardContainer.innerHTML = `
 
             <!-- OVERVIEW -->
+
             <div class="row g-4 mb-4">
 
-                <div class="col-md-3">
+                <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Content Ideas</h6>
+
                         <h3>
-                            ${dashboard.totalContentIdeas ?? 0}
+                            ${totalContentIdeas}
                         </h3>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-3">
+
+                <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Videos</h6>
+
                         <h3>
-                            ${dashboard.totalVideos ?? 0}
+                            ${totalVideos}
                         </h3>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-3">
+
+                <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Reports</h6>
+
                         <h3>
-                            ${dashboard.totalReports ?? 0}
+                            ${totalReports}
                         </h3>
+
                     </div>
-                </div>
 
-                <div class="col-md-3">
-                    <div class="stat-card">
-    <div class="stat-icon">
-        <i class="bi bi-lightbulb-fill"></i>
-    </div>
-
-    <h6>Content Ideas</h6>
-
-    <h3>
-        ${dashboard.totalContentIdeas ?? 0}
-    </h3>
-</div>
                 </div>
 
             </div>
 
 
             <!-- PERFORMANCE -->
+
             <div class="row g-4 mb-4">
 
                 <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Total Views</h6>
+
                         <h3>
-                            ${dashboard.totalViews ?? 0}
+                            ${totalViews.toLocaleString()}
                         </h3>
+
                     </div>
+
                 </div>
 
+
                 <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Total Likes</h6>
+
                         <h3>
-                            ${dashboard.totalLikes ?? 0}
+                            ${totalLikes.toLocaleString()}
                         </h3>
+
                     </div>
+
                 </div>
 
+
                 <div class="col-md-4">
+
                     <div class="stat-card">
+
                         <h6>Total Comments</h6>
+
                         <h3>
-                            ${dashboard.totalComments ?? 0}
+                            ${totalComments.toLocaleString()}
                         </h3>
+
                     </div>
+
                 </div>
 
             </div>
 
 
             <!-- ENGAGEMENT -->
+
             <div class="row g-4 mb-4">
 
                 <div class="col-md-3">
+
                     <div class="stat-card">
+
                         <h6>Total Shares</h6>
+
                         <h3>
-                            ${dashboard.totalShares ?? 0}
+                            ${totalShares.toLocaleString()}
                         </h3>
+
                     </div>
+
                 </div>
 
+
                 <div class="col-md-3">
+
                     <div class="stat-card">
+
                         <h6>Average CTR</h6>
+
                         <h3>
-                            ${dashboard.averageCtr ?? 0}%
+                            ${averageCtr}%
                         </h3>
+
                     </div>
+
                 </div>
 
+
                 <div class="col-md-3">
+
                     <div class="stat-card">
+
                         <h6>Average Engagement</h6>
+
                         <h3>
-                            ${dashboard.averageEngagement ?? 0}%
+                            ${averageEngagement}%
                         </h3>
+
                     </div>
+
                 </div>
 
+
                 <div class="col-md-3">
+
                     <div class="stat-card">
+
                         <h6>Calendar Events</h6>
+
                         <h3>
-                            ${dashboard.totalCalendarEvents ?? 0}
+                            ${totalCalendarEvents}
                         </h3>
+
                     </div>
+
                 </div>
 
             </div>
 
 
             <!-- WELCOME -->
-            <div class="data-card">
+
+            <div class="data-card mb-4">
 
                 <h5 class="mb-3">
                     Welcome to CreatorHub
@@ -262,6 +354,223 @@ async function loadDashboard() {
 
         `;
 
+
+        // ==================================================
+        // DASHBOARD CHARTS
+        // ==================================================
+
+        if (typeof Chart === "undefined") {
+
+            console.error(
+                "Chart.js is not loaded."
+            );
+
+            return;
+        }
+
+
+        const performanceCanvas =
+            document.getElementById("performanceChart");
+
+        const engagementCanvas =
+            document.getElementById("engagementChart");
+
+
+        console.log(
+            "Performance canvas:",
+            performanceCanvas
+        );
+
+        console.log(
+            "Engagement canvas:",
+            engagementCanvas
+        );
+
+
+        // ==================================================
+        // PERFORMANCE CHART
+        // ==================================================
+
+        if (performanceCanvas) {
+
+            const existingPerformance =
+                Chart.getChart(performanceCanvas);
+
+            if (existingPerformance) {
+                existingPerformance.destroy();
+            }
+
+
+            window.performanceChart =
+                new Chart(
+                    performanceCanvas,
+                    {
+
+                        type: "bar",
+
+                        data: {
+
+                            labels: [
+                                "Views",
+                                "Likes",
+                                "Comments"
+                            ],
+
+                            datasets: [
+
+                                {
+
+                                    label:
+                                        "Video Performance",
+
+                                    data: [
+                                        totalViews,
+                                        totalLikes,
+                                        totalComments
+                                    ],
+
+                                    borderWidth: 1,
+
+                                    borderRadius: 8,
+
+                                    maxBarThickness: 70
+
+                                }
+
+                            ]
+
+                        },
+
+
+                        options: {
+
+                            responsive: true,
+
+                            maintainAspectRatio: false,
+
+                            plugins: {
+
+                                legend: {
+                                    display: false
+                                }
+
+                            },
+
+                            scales: {
+
+                                y: {
+
+                                    type: "logarithmic",
+
+                                    beginAtZero: false
+
+                                },
+
+                                x: {
+
+                                    grid: {
+                                        display: false
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+                );
+
+        }
+
+
+        // ==================================================
+        // ENGAGEMENT CHART
+        // ==================================================
+
+        if (engagementCanvas) {
+
+            const existingEngagement =
+                Chart.getChart(engagementCanvas);
+
+            if (existingEngagement) {
+                existingEngagement.destroy();
+            }
+
+
+            window.engagementChart =
+                new Chart(
+                    engagementCanvas,
+                    {
+
+                        type: "doughnut",
+
+                        data: {
+
+                            labels: [
+                                "Likes",
+                                "Comments",
+                                "Shares"
+                            ],
+
+                            datasets: [
+
+                                {
+
+                                    data: [
+                                        totalLikes,
+                                        totalComments,
+                                        totalShares
+                                    ],
+
+                                    borderWidth: 3
+
+                                }
+
+                            ]
+
+                        },
+
+
+                        options: {
+
+                            responsive: true,
+
+                            maintainAspectRatio: false,
+
+                            cutout: "62%",
+
+                            plugins: {
+
+                                legend: {
+
+                                    display: true,
+
+                                    position: "bottom"
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+                );
+
+        }
+
+
+        console.log(
+            "Performance chart created:",
+            !!window.performanceChart
+        );
+
+        console.log(
+            "Engagement chart created:",
+            !!window.engagementChart
+        );
+
+
     } catch (error) {
 
         console.error(
@@ -269,16 +578,24 @@ async function loadDashboard() {
             error
         );
 
+
         dashboardContainer.innerHTML = `
+
             <div class="alert alert-danger">
+
                 ${escapeHtml(
                     error.message ||
                     "Failed to load dashboard."
                 )}
+
             </div>
+
         `;
+
     }
+
 }
+
 // ======================================================
 // CONTENT IDEAS
 // ======================================================
@@ -1196,8 +1513,7 @@ async function loadVideos() {
 
     console.log("LOAD VIDEOS STARTED");
 
-    const container =
-        document.getElementById("videosContainer");
+    const container = document.getElementById("videosContainer");
 
     if (!container) {
         console.warn("videosContainer not found");
@@ -1212,66 +1528,14 @@ async function loadVideos() {
 
     try {
 
-        const videos =
-            await apiRequest("/api/videos");
+        const videos = await apiRequest("/api/videos");
 
         console.log("VIDEOS:", videos);
 
-        if (!Array.isArray(videos) || videos.length === 0) {
-
-    container.innerHTML = `
-        <div class="d-flex justify-content-between
-                    align-items-center mb-4">
-
-            <div>
-                <h4 class="mb-1">
-                    Videos
-                </h4>
-
-                <p class="text-muted mb-0">
-                    Track and manage your video performance.
-                </p>
-            </div>
-
-            <button
-                type="button"
-                class="btn btn-primary"
-                onclick="showVideoForm()">
-
-                + Add Video
-
-            </button>
-
-        </div>
-
-        <div id="videoFormContainer"></div>
-
-        <div class="data-card text-center py-5">
-
-            <h4 class="mb-2">
-                No videos yet
-            </h4>
-
-            <p class="text-muted mb-0">
-                Add your first video to start tracking performance.
-            </p>
-
-        </div>
-    `;
-
-    return;
-}
-
-        container.innerHTML = `
-
-            <div class="d-flex justify-content-between
-                        align-items-center mb-4">
-
+        const header = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 class="mb-1">
-                        Videos
-                    </h4>
-
+                    <h4 class="mb-1">Videos</h4>
                     <p class="text-muted mb-0">
                         Track and manage your video performance.
                     </p>
@@ -1281,14 +1545,28 @@ async function loadVideos() {
                     type="button"
                     class="btn btn-primary"
                     onclick="showVideoForm()">
-
                     + Add Video
-
                 </button>
-
             </div>
 
             <div id="videoFormContainer"></div>
+        `;
+
+        if (!Array.isArray(videos) || videos.length === 0) {
+
+            container.innerHTML = header + `
+                <div class="data-card text-center py-5">
+                    <h4 class="mb-2">No videos yet</h4>
+                    <p class="text-muted mb-0">
+                        Add your first video to start tracking performance.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = header + `
 
             <div class="data-card">
 
@@ -1306,6 +1584,9 @@ async function loadVideos() {
                                 <th>Shares</th>
                                 <th>Watch Time</th>
                                 <th>CTR</th>
+                                <th>Subscribers</th>
+                                <th>Revenue</th>
+                                <th>Impressions</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -1316,9 +1597,7 @@ async function loadVideos() {
 
                                 <tr>
 
-                                    <td>
-                                        ${video.videoId ?? "-"}
-                                    </td>
+                                    <td>${video.videoId ?? "-"}</td>
 
                                     <td>
                                         <strong>
@@ -1326,29 +1605,15 @@ async function loadVideos() {
                                         </strong>
                                     </td>
 
-                                    <td>
-                                        ${video.views ?? 0}
-                                    </td>
-
-                                    <td>
-                                        ${video.likes ?? 0}
-                                    </td>
-
-                                    <td>
-                                        ${video.comments ?? 0}
-                                    </td>
-
-                                    <td>
-                                        ${video.shares ?? 0}
-                                    </td>
-
-                                    <td>
-                                        ${video.watchTime ?? 0}
-                                    </td>
-
-                                    <td>
-                                        ${video.ctr ?? 0}%
-                                    </td>
+                                    <td>${Number(video.views ?? 0).toLocaleString()}</td>
+                                    <td>${Number(video.likes ?? 0).toLocaleString()}</td>
+                                    <td>${Number(video.comments ?? 0).toLocaleString()}</td>
+                                    <td>${Number(video.shares ?? 0).toLocaleString()}</td>
+                                    <td>${video.watchTime ?? 0}</td>
+                                    <td>${video.ctr ?? 0}%</td>
+                                    <td>${Number(video.subscribers ?? 0).toLocaleString()}</td>
+                                    <td>₹${Number(video.revenue ?? 0).toFixed(2)}</td>
+                                    <td>${Number(video.impressions ?? 0).toLocaleString()}</td>
 
                                     <td>
 
@@ -1358,18 +1623,14 @@ async function loadVideos() {
                                                 type="button"
                                                 class="btn btn-sm btn-outline-primary"
                                                 onclick="editVideo(${video.videoId})">
-
                                                 Edit
-
                                             </button>
 
                                             <button
                                                 type="button"
                                                 class="btn btn-sm btn-outline-danger"
                                                 onclick="deleteVideo(${video.videoId})">
-
                                                 Delete
-
                                             </button>
 
                                         </div>
@@ -1387,14 +1648,10 @@ async function loadVideos() {
                 </div>
 
             </div>
-        `;
-
+                `;
     } catch (error) {
 
-        console.error(
-            "VIDEOS LOAD ERROR:",
-            error
-        );
+        console.error("VIDEOS LOAD ERROR:", error);
 
         container.innerHTML = `
             <div class="alert alert-danger">
@@ -1406,7 +1663,7 @@ async function loadVideos() {
         `;
     }
 }
-// ======================================================
+        // ======================================================
 // APPLICATION START
 // ======================================================
 
@@ -1521,6 +1778,8 @@ function showVideoForm(video = null) {
 
             <form id="videoForm">
 
+                <!-- TITLE -->
+
                 <div class="mb-3">
 
                     <label
@@ -1544,6 +1803,9 @@ function showVideoForm(video = null) {
                         required>
 
                 </div>
+
+
+                <!-- VIEWS / LIKES -->
 
                 <div class="row g-3">
 
@@ -1571,6 +1833,7 @@ function showVideoForm(video = null) {
 
                     </div>
 
+
                     <div class="col-md-6">
 
                         <label
@@ -1594,6 +1857,9 @@ function showVideoForm(video = null) {
                             required>
 
                     </div>
+
+
+                    <!-- COMMENTS / SHARES -->
 
                     <div class="col-md-6">
 
@@ -1619,6 +1885,7 @@ function showVideoForm(video = null) {
 
                     </div>
 
+
                     <div class="col-md-6">
 
                         <label
@@ -1642,6 +1909,9 @@ function showVideoForm(video = null) {
                             required>
 
                     </div>
+
+
+                    <!-- WATCH TIME / CTR -->
 
                     <div class="col-md-6">
 
@@ -1668,6 +1938,7 @@ function showVideoForm(video = null) {
 
                     </div>
 
+
                     <div class="col-md-6">
 
                         <label
@@ -1693,12 +1964,96 @@ function showVideoForm(video = null) {
 
                     </div>
 
+
+                    <!-- SUBSCRIBERS -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="videoSubscribers"
+                            class="form-label">
+
+                            Subscribers Gained
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="videoSubscribers"
+                            class="form-control"
+                            min="0"
+                            value="${
+                                editing
+                                    ? video.subscribers ?? 0
+                                    : 0
+                            }"
+                            required>
+
+                    </div>
+
+
+                    <!-- REVENUE -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="videoRevenue"
+                            class="form-label">
+
+                            Revenue (â‚¹)
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="videoRevenue"
+                            class="form-control"
+                            min="0"
+                            step="0.01"
+                            value="${
+                                editing
+                                    ? video.revenue ?? 0
+                                    : 0
+                            }"
+                            required>
+
+                    </div>
+
+
+                    <!-- IMPRESSIONS -->
+
+                    <div class="col-md-6">
+
+                        <label
+                            for="videoImpressions"
+                            class="form-label">
+
+                            Impressions
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="videoImpressions"
+                            class="form-control"
+                            min="0"
+                            value="${
+                                editing
+                                    ? video.impressions ?? 0
+                                    : 0
+                            }"
+                            required>
+
+                    </div>
+
                 </div>
+
 
                 <div
                     id="videoFormError"
                     class="text-danger mt-3">
                 </div>
+
 
                 <button
                     type="submit"
@@ -1780,54 +2135,118 @@ async function saveVideo(videoId = null) {
             document.getElementById("videoCtr").value
         );
 
+    const subscribers =
+        Number(
+            document.getElementById("videoSubscribers").value
+        );
+
+    const revenue =
+        Number(
+            document.getElementById("videoRevenue").value
+        );
+
+    const impressions =
+        Number(
+            document.getElementById("videoImpressions").value
+        );
+
+
+    // ==================================================
+    // VALIDATION
+    // ==================================================
+
     if (!title) {
+
         errorContainer.textContent =
             "Video title is required.";
+
         return;
     }
 
     if (
-        [views, likes, comments, shares, watchTime, ctr]
-            .some(value => !Number.isFinite(value) || value < 0)
+        [
+            views,
+            likes,
+            comments,
+            shares,
+            watchTime,
+            ctr,
+            subscribers,
+            revenue,
+            impressions
+        ].some(
+            value =>
+                !Number.isFinite(value) ||
+                value < 0
+        )
     ) {
+
         errorContainer.textContent =
             "All numeric values must be zero or greater.";
+
         return;
     }
+
 
     try {
 
         errorContainer.textContent =
             "Saving...";
 
+
+        // ==================================================
+        // API REQUEST
+        // ==================================================
+
         await apiRequest(
             videoId
                 ? `/api/videos/${videoId}`
                 : "/api/videos",
             {
-                method: videoId
-                    ? "PUT"
-                    : "POST",
 
-                body: JSON.stringify({
-                    title,
-                    views,
-                    likes,
-                    comments,
-                    shares,
-                    watchTime,
-                    ctr
-                })
+                method:
+                    videoId
+                        ? "PUT"
+                        : "POST",
+
+                body:
+                    JSON.stringify({
+
+                        title,
+
+                        views,
+
+                        likes,
+
+                        comments,
+
+                        shares,
+
+                        watchTime,
+
+                        ctr,
+
+                        subscribers,
+
+                        revenue,
+
+                        impressions
+
+                    })
+
             }
         );
+
 
         console.log(
             "VIDEO SAVED SUCCESSFULLY"
         );
 
+
         closeVideoForm();
 
         await loadVideos();
+
 
     } catch (error) {
 
@@ -1839,6 +2258,7 @@ async function saveVideo(videoId = null) {
         errorContainer.textContent =
             error.message ||
             "Failed to save video.";
+
     }
 }
 // ======================================================
@@ -3640,4 +4060,6 @@ function closeReportForm() {
         container.innerHTML = "";
     }
 }
+
+
 
