@@ -5,3 +5,4 @@ target/
 *.class
 .env
 application-local.properties
+cp.txt
