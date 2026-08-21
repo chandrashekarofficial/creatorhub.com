@@ -71,7 +71,7 @@
                     required>
             </div>
 
-            <button
+                        <button
                 class="btn btn-primary w-100 py-2"
                 type="submit">
 
@@ -84,6 +84,19 @@
                  class="text-danger mt-3 text-center">
             </div>
 
+            <div class="text-center mt-3">
+                <span class="text-muted">
+                    Don't have an account?
+                </span>
+
+                <button
+                    type="button"
+                    class="btn btn-link p-0"
+                    onclick="showSignup()">
+                    Create account
+                </button>
+            </div>
+
         </form>
 
     </div>
@@ -91,9 +104,120 @@
 </section>
 
 
-<!-- ================= DASHBOARD APP ================= -->
 
-<section id="dashboardApp" class="d-none">
+<!-- ================= SIGNUP ================= -->
+
+<section id="signupPage" class="auth-page d-none">
+
+    <div class="auth-card">
+
+        <div class="text-center mb-4">
+
+            <div class="brand-icon">
+                <i class="bi bi-person-plus-fill"></i>
+            </div>
+
+            <h1 class="mt-3">Create Account</h1>
+
+            <p class="text-muted mb-0">
+                Start using CreatorHub
+            </p>
+
+        </div>
+
+        <form id="signupForm">
+
+            <div class="mb-3">
+                <label
+                    for="signupName"
+                    class="form-label">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="signupName"
+                    class="form-control"
+                    maxlength="100"
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label
+                    for="signupEmail"
+                    class="form-label">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="signupEmail"
+                    class="form-control"
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label
+                    for="signupPassword"
+                    class="form-label">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="signupPassword"
+                    class="form-control"
+                    minlength="6"
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label
+                    for="signupConfirmPassword"
+                    class="form-label">
+                    Confirm Password
+                </label>
+
+                <input
+                    type="password"
+                    id="signupConfirmPassword"
+                    class="form-control"
+                    minlength="6"
+                    required>
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary w-100 py-2">
+
+                <i class="bi bi-person-plus me-2"></i>
+                Create Account
+
+            </button>
+
+            <div
+                id="signupError"
+                class="text-danger mt-3 text-center">
+            </div>
+
+            <div class="text-center mt-3">
+
+                <button
+                    type="button"
+                    class="btn btn-link"
+                    onclick="showLogin()">
+
+                    Back to Login
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
 
     <!-- TOP NAVBAR -->
 
@@ -123,6 +247,10 @@
     <div class="container-fluid">
 
         <div class="row g-0">
+</section>
+
+<!-- ================= DASHBOARD APP ================= -->
+<section id="dashboardApp" class="d-none">
 
             <!-- ================= SIDEBAR ================= -->
 
@@ -489,6 +617,8 @@
 
 </body>
 </html>
+
+
 
 
 

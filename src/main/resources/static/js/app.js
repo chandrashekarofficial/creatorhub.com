@@ -4072,3 +4072,154 @@ function closeReportForm() {
 
 
 
+
+// ======================================================
+// SIGNUP
+// ======================================================
+
+function showSignup() {
+
+    const loginPage =
+        document.getElementById("loginPage");
+
+    const signupPage =
+        document.getElementById("signupPage");
+
+    if (!loginPage || !signupPage) {
+        console.error("Signup elements not found.");
+        return;
+    }
+
+    loginPage.classList.add("d-none");
+    signupPage.classList.remove("d-none");
+
+    console.log("SIGNUP PAGE SHOWN");
+}
+
+
+function showLogin() {
+
+    const loginPage =
+        document.getElementById("loginPage");
+
+    const signupPage =
+        document.getElementById("signupPage");
+
+    if (!loginPage || !signupPage) {
+        console.error("Login elements not found.");
+        return;
+    }
+
+    signupPage.classList.add("d-none");
+    loginPage.classList.remove("d-none");
+
+    console.log("LOGIN PAGE SHOWN");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const signupForm =
+        document.getElementById("signupForm");
+
+    if (!signupForm) {
+        return;
+    }
+
+    signupForm.addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        const name =
+            document.getElementById("signupName")
+                .value.trim();
+
+        const email =
+            document.getElementById("signupEmail")
+                .value.trim();
+
+        const password =
+            document.getElementById("signupPassword")
+                .value;
+
+        const confirmPassword =
+            document.getElementById("signupConfirmPassword")
+                .value;
+
+        const error =
+            document.getElementById("signupError");
+
+        error.textContent = "";
+
+        if (password !== confirmPassword) {
+            error.textContent =
+                "Passwords do not match.";
+            return;
+        }
+
+        try {
+
+            const response = await fetch(
+                "/api/auth/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password
+                    })
+                }
+            );
+
+            const data =
+                await response.json();
+
+            console.log(
+                "SIGNUP RESPONSE:",
+                data
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                    data?.error ||
+                    "Registration failed."
+                );
+            }
+
+            localStorage.setItem(
+                "creatorhub_token",
+                data.token
+            );
+
+            localStorage.setItem(
+                "creatorhub_user",
+                JSON.stringify({
+                    userId: data.userId,
+                    name: data.name,
+                    email: data.email
+                })
+            );
+
+            window.location.reload();
+
+        } catch (error) {
+
+            console.error(
+                "SIGNUP ERROR:",
+                error
+            );
+
+            document.getElementById(
+                "signupError"
+            ).textContent =
+                error.message ||
+                "Registration failed.";
+        }
+
+    });
+
+});

@@ -431,3 +431,25 @@ body {
     font-size: 16px;
     margin-bottom: 16px;
 }
+
+/* ======================================================
+   SIGNUP PAGE
+   ====================================================== */
+
+#signupPage {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+#signupPage.d-none {
+    display: none !important;
+}
+
+#signupPage .auth-card {
+    width: 100%;
+    max-width: 420px;
+}
