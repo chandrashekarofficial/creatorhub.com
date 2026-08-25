@@ -1,24 +1,10 @@
-﻿# Secrets / environment files
-.env
-.env.*
-!.env.example
-
-# Java / Maven
 target/
-*.class
-
-# Logs
-*.log
-
-# IDE files
 .idea/
-.vscode/
 *.iml
+.vscode/
+*.class
+.env
+application-local.properties
+cp.txt
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
+server.log
