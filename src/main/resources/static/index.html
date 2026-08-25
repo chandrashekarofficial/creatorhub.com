@@ -1,0 +1,403 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CreatorHub — YouTube Statistics</title>
+
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="topbar">
+
+        <div class="logo">
+            <span class="logo-icon">▶</span>
+            <span>CREATOR<span>HUB</span></span>
+        </div>
+
+        <div class="search-box">
+            <input
+                id="query"
+                type="text"
+                placeholder="Search YouTube channel, @handle or URL..."
+            >
+            <button id="go">Analyze</button>
+        </div>
+
+        <button id="themeToggle" class="theme-btn">
+            ☾
+        </button>
+
+    </header>
+
+
+    <main>
+
+        <section class="hero">
+
+            <div>
+
+                <div class="eyebrow">
+                    YOUTUBE STATISTICS
+                </div>
+
+                <h1>
+                    Understand any<br>
+                    <span>YouTube channel.</span>
+                </h1>
+
+                <p>
+                    Explore public channel statistics, rankings,
+                    growth indicators, earnings estimates and milestones.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <div id="error" class="error"></div>
+
+
+        <section id="empty" class="empty">
+
+            <div class="empty-icon">
+                ▶
+            </div>
+
+            <h2>
+                Search for a creator
+            </h2>
+
+            <p>
+                Enter a YouTube channel name, URL, @handle or channel ID
+                to begin.
+            </p>
+
+        </section>
+
+
+        <section id="dashboard" class="dashboard hidden">
+
+            <div class="channel-header">
+
+                <div class="channel-info">
+
+                    <img id="avatar" src="" alt="Channel">
+
+                    <div>
+
+                        <h2 id="channelName">
+                            Channel
+                        </h2>
+
+                        <p id="channelMeta">
+                            YouTube channel
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <a
+                    id="youtubeLink"
+                    class="youtube-button"
+                    target="_blank"
+                >
+                    View on YouTube ↗
+                </a>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <article class="stat-card">
+                    <span>Subscribers</span>
+                    <strong id="subs">—</strong>
+                    <small>Public count</small>
+                </article>
+
+                <article class="stat-card">
+                    <span>Total Views</span>
+                    <strong id="views">—</strong>
+                    <small>Lifetime views</small>
+                </article>
+
+                <article class="stat-card">
+                    <span>Videos</span>
+                    <strong id="videos">—</strong>
+                    <small>Published videos</small>
+                </article>
+
+                <article class="stat-card grade-card">
+                    <span>CreatorHub Grade</span>
+                    <strong id="grade">—</strong>
+                    <small>Based on public performance</small>
+                </article>
+
+            </div>
+
+
+            <div class="rank-grid">
+
+                <article class="panel">
+
+                    <div class="panel-title">
+                        <div>
+                            <span class="eyebrow">CREATORHUB</span>
+                            <h3>Channel Rankings</h3>
+                        </div>
+                    </div>
+
+                    <div class="rank-list">
+
+                        <div>
+                            <span>Subscriber Rank</span>
+                            <b id="subscriberRank">—</b>
+                        </div>
+
+                        <div>
+                            <span>View Rank</span>
+                            <b id="viewRank">—</b>
+                        </div>
+
+                        <div>
+                            <span>Video Rank</span>
+                            <b id="videoRank">—</b>
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <article class="panel">
+
+                    <div class="panel-title">
+                        <div>
+                            <span class="eyebrow">ESTIMATE</span>
+                            <h3>Potential Earnings</h3>
+                        </div>
+                    </div>
+
+                    <div class="earnings">
+
+                        <strong id="earnings">
+                            —
+                        </strong>
+
+                        <span>
+                            Estimated monthly range
+                        </span>
+
+                        <small>
+                            Estimates are based on public views
+                            and are not actual YouTube revenue.
+                        </small>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+
+            <article class="panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <span class="eyebrow">PERFORMANCE</span>
+                        <h3>Channel Overview</h3>
+                    </div>
+
+                    <span class="panel-note">
+                        Public YouTube data
+                    </span>
+
+                </div>
+
+                <div class="overview-grid">
+
+                    <div class="overview-stat">
+                        <span>Average views / video</span>
+                        <b id="averageViews">—</b>
+                    </div>
+
+                    <div class="overview-stat">
+                        <span>Channel created</span>
+                        <b id="created">—</b>
+                    </div>
+
+                    <div class="overview-stat">
+                        <span>Country</span>
+                        <b id="country">—</b>
+                    </div>
+
+                    <div class="overview-stat">
+                        <span>Channel ID</span>
+                        <b id="channelId">—</b>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <article class="panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <span class="eyebrow">GROWTH</span>
+                        <h3>Subscriber & View Growth</h3>
+                    </div>
+
+                    <span class="coming">
+                        Historical tracking coming soon
+                    </span>
+
+                </div>
+
+                <div class="growth-placeholder">
+
+                    <div class="fake-chart">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                    <p>
+                        CreatorHub will track historical public statistics
+                        once daily snapshots are enabled.
+                    </p>
+
+                </div>
+
+            </article>
+
+
+            <article class="panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <span class="eyebrow">DAILY</span>
+                        <h3>Daily Statistics</h3>
+                    </div>
+
+                    <span class="coming">
+                        Historical tracking coming soon
+                    </span>
+
+                </div>
+
+                <div class="table-scroll">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Date</th>
+                                <th>Subscribers</th>
+                                <th>Views</th>
+                                <th>Videos</th>
+                                <th>Estimated Earnings</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="dailyRows">
+
+                            <tr>
+                                <td colspan="5">
+                                    Daily snapshots will appear here.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+
+            <article class="panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <span class="eyebrow">VIDEOS</span>
+                        <h3>Recent Videos</h3>
+                    </div>
+
+                    <span id="videoCount" class="panel-note">
+                        —
+                    </span>
+
+                </div>
+
+                <div id="videosGrid" class="videos-grid"></div>
+
+            </article>
+
+
+            <article class="panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <span class="eyebrow">MILESTONES</span>
+                        <h3>Creator Milestones</h3>
+                    </div>
+
+                </div>
+
+                <div id="milestones" class="milestones"></div>
+
+            </article>
+
+
+            <div class="public-note">
+
+                <b>Public data only.</b>
+
+                CreatorHub does not display private YouTube Studio information.
+                Revenue figures are estimates and not official YouTube earnings.
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <span>© 2026 CreatorHub</span>
+
+        <span>
+            YouTube public statistics
+        </span>
+
+    </footer>
+
+</div>
+
+<script src="/js/app.js"></script>
+
+</body>
+</html>
