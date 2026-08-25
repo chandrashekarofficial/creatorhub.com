@@ -8,3 +8,6 @@ application-local.properties
 cp.txt
 
 server.log
+
+# Local polish backups
+*-before-polish.*
