@@ -144,10 +144,10 @@ function updateFavoriteButton(channel) {
     if (!button || !channel) return;
 
     if (isFavorite(channel.channelId)) {
-        button.textContent = "Favorited";
+        button.textContent = "â˜… Favorited";
         button.classList.add("is-favorite");
     } else {
-        button.textContent = "Favorite";
+        button.textContent = "â˜† Favorite";
         button.classList.remove("is-favorite");
     }
 }
@@ -197,9 +197,9 @@ function renderFavorites() {
     if (!favorites.length) {
         grid.innerHTML = `
             <div class="favorites-empty">
-                <span></span>
+                <span>â˜†</span>
                 <p>No favorite channels yet.</p>
-                <small>Analyze a channel and click Favorite to add it.</small>
+                <small>Analyze a channel and click â˜† Favorite to add it.</small>
             </div>
         `;
         return;
@@ -219,10 +219,10 @@ function renderFavorites() {
 
             <div class="favorite-card-info">
                 <strong>${esc(channel.title)}</strong>
-                <span></span>
+                <span>${num(channel.subscribers)} subscribers</span>
             </div>
 
-            <span class="favorite-arrow"></span>
+            <span class="favorite-arrow">â†’</span>
         </button>
     `).join("");
 
@@ -569,7 +569,9 @@ function renderMilestones(subscribers) {
                         ${num(level)}
                     </b>
 
-                    <span></span>
+                    <span>
+                        subscribers
+                    </span>
 
                 </div>
             `;

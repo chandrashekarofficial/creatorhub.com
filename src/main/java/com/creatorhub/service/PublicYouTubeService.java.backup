@@ -139,6 +139,11 @@ public class PublicYouTubeService {
             return id;
         }
 
+        // YouTube handle
+        if (query.startsWith("@")) {
+            query = query.substring(1);
+        }
+
         // Search by handle/name
         String searchUrl =
                 "https://www.googleapis.com/youtube/v3/search"

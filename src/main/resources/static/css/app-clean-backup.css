@@ -1059,12 +1059,3 @@ body {
     }
 
 }
-
-.dashboard-nav {
-    margin-right: 18px;
-}
-
-.dashboard-nav:last-child {
-    margin-right: 0;
-}
-

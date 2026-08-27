@@ -31,7 +31,17 @@ public class PublicYouTubeService {
                 .queryParam("key", apiKey)
                 .toUriString();
 
-        String response = restTemplate.getForObject(url, String.class);
+        byte[] responseBytes =
+                restTemplate.getForObject(
+                        url,
+                        byte[].class
+                );
+
+        String response =
+                new String(
+                        responseBytes,
+                        StandardCharsets.UTF_8
+                );
 
         JsonNode root = objectMapper.readTree(response);
 
@@ -198,10 +208,16 @@ public class PublicYouTubeService {
                         .queryParam("key", apiKey)
                         .toUriString();
 
-        String response =
+        byte[] responseBytes =
                 restTemplate.getForObject(
                         url,
-                        String.class
+                        byte[].class
+                );
+
+        String response =
+                new String(
+                        responseBytes,
+                        StandardCharsets.UTF_8
                 );
 
         JsonNode root =
@@ -306,3 +322,4 @@ public class PublicYouTubeService {
         return estimateMonthlyEarnings(totalViews) * 12;
     }
 }
+
