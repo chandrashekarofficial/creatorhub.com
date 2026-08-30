@@ -11,3 +11,5 @@ server.log
 
 # Local polish backups
 *-before-polish.*
+
+src/main/resources/static-backup-before-redesign/
